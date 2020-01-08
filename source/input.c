@@ -275,13 +275,13 @@ int input_init(
    * See input_try_unknown_parameters for the actual shooting
    *
    */
-
-  char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr",
-                                       "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm","sigma8"};
-  char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm",
-                                        "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr","A_s"};
-  enum computation_stage target_cs[] = {cs_thermodynamics, cs_background, cs_background,
-                                        cs_background, cs_background, cs_background, cs_nonlinear};
+  /* GFA: Added four new target_namestrings, each one with their corresponding unknown_parameter and target_cs  */
+  char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr","Omega_dcdmdrwdm", "omega_dcdmdrwdm",
+                                       "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm","Omega_ini_dcdm2","omega_ini_dcdm2","sigma8"};
+  char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm","Omega_ini_dcdm2","Omega_ini_dcdm2",
+                                        "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr","Omega_dcdmdrwdm","omega_dcdmdrwdm","A_s"};
+  enum computation_stage target_cs[] = {cs_thermodynamics, cs_background, cs_background, cs_background, cs_background,
+                                        cs_background, cs_background, cs_background, cs_background, cs_background, cs_nonlinear};
 
   int input_verbose = 0, int1, aux_flag, shooting_failed=_FALSE_;
 
@@ -897,6 +897,7 @@ int input_read_parameters(
     class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
                errmsg,
                "In input file, you can only enter one of Omega_ini_dcdm or omega_ini_dcdm, choose one");
+    /* Here I should maybe include an error message in case Omega0_cdm or omega_cdm have been read, telling that we cannot have both cdm and dcdm components at the same time  */
     if (flag1 == _TRUE_)
       pba->Omega_ini_dcdm = param1;
     if (flag2 == _TRUE_)
@@ -909,22 +910,58 @@ int input_read_parameters(
 
   }
 
-/** GFA: - Read Gamma2 (two-body decay) in same units as H0, i.e. km/(s Mpc)*/
-class_read_double("Gamma_dcdm2",pba->Gamma_dcdm2);
-/* GFA: Convert Gamma to Mpc */
-pba->Gamma_dcdm2 *= (1.e3 / _c_);
-/** GFA: - Read varepsilon (two-body decay)   */
-class_read_double("varepsilon",pba->varepsilon);
+  /** - GFA: Omega_0_dcdmdrwdm (DCDM) */
+  class_call(parser_read_double(pfc,"Omega_dcdmdrwdm",&param1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+  class_call(parser_read_double(pfc,"omega_dcdmdrwdm",&param2,&flag2,errmsg),
+             errmsg,
+             errmsg);
+  class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
+             errmsg,
+             "In input file, you can only enter one of Omega_dcdmdrwdm or omega_dcdmdrwdm, choose one");
+  if (flag1 == _TRUE_)
+    pba->Omega0_dcdm2dr2wdm2 = param1;
+  if (flag2 == _TRUE_)
+    pba->Omega0_dcdm2dr2wdm2 = param2/pba->h/pba->h;
 
-class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
-"The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
+  if (pba->Omega0_dcdm2dr2wdm2 >0)   {
+   Omega_tot += pba->Omega0_dcdm2dr2wdm2;
 
-if (pba->Gamma_dcdm2>0) {
+   /** - Read Omega_ini_dcdm2 or omega_ini_dcdm2 */
+   class_call(parser_read_double(pfc,"Omega_ini_dcdm2",&param1,&flag1,errmsg),
+              errmsg,
+              errmsg);
+   class_call(parser_read_double(pfc,"omega_ini_dcdm2",&param2,&flag2,errmsg),
+              errmsg,
+              errmsg);
+   class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
+              errmsg,
+              "In input file, you can only enter one of Omega_ini_dcdm2 or omega_ini_dcdm2, choose one");
+   /* Here I should maybe include an error message in case Omega0_cdm or omega_cdm have been read, telling that we cannot have both cdm and dcdm components at the same time  */
+   if (flag1 == _TRUE_)
+     pba->Omega_ini_dcdm2 = param1;
+   if (flag2 == _TRUE_)
+     pba->Omega_ini_dcdm2 = param2/pba->h/pba->h;
+
+  /** GFA: - Read Gamma2 (two-body decay) in same units as H0, i.e. km/(s Mpc)*/
+    class_read_double("Gamma_dcdm2",pba->Gamma_dcdm2);
+    /* GFA: Convert Gamma to Mpc */
+    pba->Gamma_dcdm2 *= (1.e3 / _c_);
+    /** GFA: - Read varepsilon (two-body decay)   */
+    class_read_double("varepsilon",pba->varepsilon);
+    class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
+    "The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
+
+  }
+
+    /* Here I should maybe include an error message in case Omega0_cdm or omega_cdm have been read, telling that we cannot have both cdm and dcdm2 components at the same time  */
+/*if (pba->Gamma_dcdm2>0) {
   Omega_tot += pba->Omega0_cdm;
-  /** GFA: This is not quite correct, dcdm2 density today is a bit smaller than present cdm Density because of the decay */
+  /** GFA: This is not quite correct, dcdm2 density today is a bit smaller than present cdm density because of the decay */
   /* and we should consider as well the present densities of dark radiation (dr2) and warm dark matter (wdm2)  */
   /* This might require a shooting method, necessary for computing a correct Omega0_lambda   */
- }
+ /*}
 
  /** GFA: only add cdm if there is no dcdm (of any type) */
   if (pba->Gamma_dcdm == 0.0 && pba->Gamma_dcdm2 ==0.0){
@@ -2982,6 +3019,7 @@ int input_default_params(
   pba->Omega0_b = 0.022032/pow(pba->h,2);
   pba->Omega0_cdm = 0.12038/pow(pba->h,2);
   pba->Omega0_dcdmdr = 0.0;
+  pba->Omega0_dcdm2dr2wdm2=0.0;
   pba->Omega0_dcdm = 0.0;
   pba->Gamma_dcdm = 0.0;
   pba->Gamma_dcdm2 = 0.0; /* GFA */
@@ -3449,6 +3487,7 @@ int input_try_unknown_parameters(double * unknown_parameter,
 
   int i;
   double rho_dcdm_today, rho_dr_today;
+  double rho_dcdm2_today, rho_dr2_today, rho_wdm2_today;
   struct fzerofun_workspace * pfzw;
   int input_verbose;
   int flag;
@@ -3626,6 +3665,18 @@ int input_try_unknown_parameters(double * unknown_parameter,
         rho_dr_today = 0.;
       output[i] = (rho_dcdm_today+rho_dr_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;
       break;
+    case Omega_dcdmdrwdm:  /* GFA*/
+      rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
+      rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
+      rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+      output[i] = (rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)-pfzw->target_value[i];
+      break;
+    case omega_dcdmdrwdm: /* GFA*/
+      rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
+      rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
+      rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+      output[i] = (rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;;
+      break;
     case Omega_scf:
       /** - In case scalar field is used to fill, pba->Omega0_scf is not equal to pfzw->target_value[i].*/
       output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_scf]/(ba.H0*ba.H0)
@@ -3639,6 +3690,13 @@ int input_try_unknown_parameters(double * unknown_parameter,
       else
         rho_dr_today = 0.;
       output[i] = -(rho_dcdm_today+rho_dr_today)/(ba.H0*ba.H0)+ba.Omega0_dcdmdr;
+      break;
+    case Omega_ini_dcdm2:
+    case omega_ini_dcdm2:
+      rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
+      rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
+      rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+      output[i]=-(rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)+ba.Omega0_dcdm2dr2wdm2;
       break;
     case sigma8:
       output[i] = nl.sigma8[nl.index_pk_m]-pfzw->target_value[i];
@@ -3695,7 +3753,7 @@ int input_get_guess(double *xguess,
   struct output op;           /* for output files */
   int i;
 
-  double Omega_M, a_decay, gamma, Omega0_dcdmdr=1.0;
+  double Omega_M, a_decay, gamma, Omega0_dcdmdr=1.0, Omega0_dcdm2dr2wdm2=1.0;
   int index_guess;
 
   /* Cheat to read only known parameters: */
@@ -3747,7 +3805,8 @@ int input_get_guess(double *xguess,
       ba.H0 = ba.h *  1.e5 / _c_;
       break;
     case Omega_dcdmdr:
-      Omega_M = ba.Omega0_cdm+ba.Omega0_dcdmdr+ba.Omega0_b;
+      // Omega_M = ba.Omega0_cdm+ba.Omega0_dcdmdr+ba.Omega0_b;
+       Omega_M =ba.Omega0_dcdmdr+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
       /* This formula is exact in a Matter + Lambda Universe, but only
          for Omega_dcdm, not the combined.
          sqrt_one_minus_M = sqrt(1.0 - Omega_M);
@@ -3766,7 +3825,8 @@ int input_get_guess(double *xguess,
       //printf("x = Omega_ini_guess = %g, dxdy = %g\n",*xguess,*dxdy);
       break;
     case omega_dcdmdr:
-      Omega_M = ba.Omega0_cdm+ba.Omega0_dcdmdr+ba.Omega0_b;
+      // Omega_M = ba.Omega0_cdm+ba.Omega0_dcdmdr+ba.Omega0_b;
+      Omega_M =ba.Omega0_dcdmdr+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
       /* This formula is exact in a Matter + Lambda Universe, but only
          for Omega_dcdm, not the combined.
          sqrt_one_minus_M = sqrt(1.0 - Omega_M);
@@ -3784,6 +3844,29 @@ int input_get_guess(double *xguess,
       dxdy[index_guess] = 1./a_decay/ba.h/ba.h;
         //printf("x = Omega_ini_guess = %g, dxdy = %g\n",*xguess,*dxdy);
       break;
+
+    case Omega_dcdmdrwdm: /* GFA */
+     Omega_M =ba.Omega0_dcdm2dr2wdm2+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+     gamma = ba.Gamma_dcdm2/ba.H0;
+     if (gamma < 1)
+       a_decay = 1.0;
+     else
+     a_decay = pow(1+(gamma*gamma-1.)/Omega_M,-1./3.);
+     xguess[index_guess] = pfzw->target_value[index_guess]/a_decay;
+     dxdy[index_guess] = 1./a_decay;
+     break;
+
+    case omega_dcdmdrwdm: /* GFA */
+     Omega_M =ba.Omega0_dcdm2dr2wdm2+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+     gamma = ba.Gamma_dcdm2/ba.H0;
+     if (gamma < 1)
+       a_decay = 1.0;
+     else
+     a_decay = pow(1+(gamma*gamma-1.)/Omega_M,-1./3.);
+     xguess[index_guess] = pfzw->target_value[index_guess]/ba.h/ba.h/a_decay;
+     dxdy[index_guess] = 1./a_decay/ba.h/ba.h;
+     break;
+
     case Omega_scf:
 
  /** - This guess is arbitrary, something nice using WKB should be implemented.
@@ -3810,7 +3893,8 @@ int input_get_guess(double *xguess,
           Omega_ini_dcdm -> Omega_dcdmdr and
           omega_ini_dcdm -> omega_dcdmdr */
       Omega0_dcdmdr *=pfzw->target_value[index_guess];
-      Omega_M = ba.Omega0_cdm+Omega0_dcdmdr+ba.Omega0_b;
+    //  Omega_M = ba.Omega0_cdm+Omega0_dcdmdr+ba.Omega0_b;
+      Omega_M = Omega0_dcdmdr+ba.Omega0_b;  /* GFA: I imposed that we cannot have both cdm and dcdm components  */
       gamma = ba.Gamma_dcdm/ba.H0;
       if (gamma < 1)
         a_decay = 1.0;
@@ -3822,6 +3906,24 @@ int input_get_guess(double *xguess,
         dxdy[index_guess] *= gamma/100;
 
       //printf("x = Omega_ini_guess = %g, dxdy = %g\n",*xguess,*dxdy);
+      break;
+    case omega_ini_dcdm2:
+      Omega0_dcdm2dr2wdm2 = 1./(ba.h*ba.h);
+    case Omega_ini_dcdm2:
+        /** - This works since correspondence is
+            Omega_ini_dcdm2 -> Omega_dcdmdrwdm and
+            omega_ini_dcdm2 -> omega_dcdmdrwdm */
+      Omega0_dcdm2dr2wdm2*=pfzw->target_value[index_guess];
+      Omega_M = Omega0_dcdm2dr2wdm2+ba.Omega0_b;  /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+      gamma = ba.Gamma_dcdm2/ba.H0;
+      if (gamma < 1)
+        a_decay = 1.0;
+      else
+        a_decay = pow(1+(gamma*gamma-1.)/Omega_M,-1./3.);
+      xguess[index_guess] = pfzw->target_value[index_guess]*a_decay;
+      dxdy[index_guess] = a_decay;
+      if (gamma > 100)
+        dxdy[index_guess] *= gamma/100;
       break;
 
     case sigma8:

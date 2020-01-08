@@ -893,7 +893,7 @@ int background_indices(
       pba->has_dr = _TRUE_;
   }
 
-  if (pba->Gamma_dcdm2 != 0.) {
+  if (pba->Omega0_dcdm2dr2wdm2 != 0.) {
     pba->has_dcdm2 = _TRUE_;
     pba->has_cdm = _FALSE_;   /** GFA: to avoid having both cdm and dcdm components */
   }
@@ -1794,7 +1794,7 @@ int background_solve(
       sqrt_integrand=sqrt((pow(pba->varepsilon,2)/(1.-2.*pba->varepsilon))*pow(a_past/pvecback_integration[pba->index_bi_a],2)+1.);
       pba->integral_wdm2 += step_a*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-trec))/(a_past*H_past);
       pvecback_integration[pba->index_bi_rho_wdm2]=
-      pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
+      pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
     }
    }
 
@@ -1848,6 +1848,13 @@ int background_solve(
   }
   if (pba->has_dr == _TRUE_){
     pba->Omega0_dr = pvecback_integration[pba->index_bi_rho_dr]/pba->H0/pba->H0;
+  }
+
+  /* GFA: contribution of decaying dark matter, dark radiation and warm dark matter to the critical density today:   */
+  if (pba->has_dcdm2 ==_TRUE_){
+    pba->Omega0_dcdm2=pvecback_integration[pba->index_bi_rho_dcdm2]/pba->H0/pba->H0;
+    pba->Omega0_dr2=pvecback_integration[pba->index_bi_rho_dr2]/pba->H0/pba->H0;
+    pba->Omega0_wdm2=pvecback_integration[pba->index_bi_rho_wdm2]/pba->H0/pba->H0;
   }
 
   /** - allocate background tables */
@@ -1960,6 +1967,15 @@ int background_solve(
              pba->Omega0_dr+pba->Omega0_dcdm,pba->Omega0_dcdmdr);
       printf("     -> Omega_ini_dcdm/Omega_b = %f\n",pba->Omega_ini_dcdm/pba->Omega0_b);
     }
+   if (pba->has_dcdm2==_TRUE_) {  /* GFA */
+     printf("  (Two-body) Decaying Cold Dark Matter details: (DCDM2 --> DR2+WDM2)\n");
+     printf("     -> Omega0_dcdm2 = %f\n",pba->Omega0_dcdm2);
+     printf("     -> Omega0_dr2 = %f\n",pba->Omega0_dr2);
+     printf("     -> Omega0_wdm2 = %f\n",pba->Omega0_wdm2);
+     printf("     -> Omega0_dr2+Omega0_dcdm2+Omega0_wdm2 = %f, input value = %f\n",
+            pba->Omega0_dr2+pba->Omega0_dcdm2+pba->Omega0_wdm2,pba->Omega0_dcdm2dr2wdm2);
+     printf("     -> Omega_ini_dcdm2/Omega_b = %f\n",pba->Omega_ini_dcdm2/pba->Omega0_b);
+   }
     if (pba->has_scf == _TRUE_){
       printf("    Scalar field details:\n");
       printf("     -> Omega_scf = %g, wished %g\n",
@@ -2104,7 +2120,7 @@ int background_initial_conditions(
   /* GFA  */
   if (pba->has_dcdm2==_TRUE_) {
     pvecback_integration[pba->index_bi_rho_dcdm2]=
-    pba->Omega0_cdm*pow(pba->H0,2)*pow(pba->a_today/a,3);
+    pba->Omega_ini_dcdm2*pow(pba->H0,2)*pow(pba->a_today/a,3);
     pvecback_integration[pba->index_bi_rho_dr2]=1.e-15; /* GFA: If I set 0.0, it gives an error with the generic_integrator (stepsize underflow)  */
     pvecback_integration[pba->index_bi_rho_wdm2]=0.0;
   }
