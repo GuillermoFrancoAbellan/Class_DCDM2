@@ -83,16 +83,16 @@ struct background
   double Omega0_ur; /**< \f$ \Omega_{0 \nu r} \f$: ultra-relativistic neutrinos */
 
   double Omega0_dcdmdr; /**< \f$ \Omega_{0 dcdm}+\Omega_{0 dr} \f$: decaying cold dark matter (dcdm) decaying to dark radiation (dr) */
-
-  double Omega0_dcdm2dr2wdm2; /**< \f$ GFA: \Omega_{0 dcdm2}+\Omega_{0 dr2}+\Omega_{0 wdm2} \f$: decaying cold dark matter (dcdm2) decaying to dark radiation (dr2) and warm dark matter (wdm2) */
+/* for shooting method */
+//  double Omega0_dcdm2dr2wdm2; /**< \f$ GFA: \Omega_{0 dcdm2}+\Omega_{0 dr2}+\Omega_{0 wdm2} \f$: decaying cold dark matter (dcdm2) decaying to dark radiation (dr2) and warm dark matter (wdm2) */
 
   double Gamma_dcdm; /**< \f$ \Gamma_{dcdm} \f$: decay constant for decaying cold dark matter */
 
   double Gamma_dcdm2; /**< GFA: decay constant for two-body decay of dark matter*/
 
   double Omega_ini_dcdm;    /**< \f$ \Omega_{ini,dcdm} \f$: rescaled initial value for dcdm density (see 1407.2418 for definitions) */
-
-  double Omega_ini_dcdm2;    /**< GFA: \f$ \Omega_{ini,dcdm2} \f$: rescaled initial value for dcdm density (two-body decay) */
+/* for shooting method */
+//  double Omega_ini_dcdm2;    /**< GFA: \f$ \Omega_{ini,dcdm2} \f$: rescaled initial value for dcdm density (two-body decay) */
 
   double Omega0_scf;        /**< \f$ \Omega_{0 scf} \f$: scalar field */
   short attractor_ic_scf;   /**< whether the scalar field has attractor initial conditions */
@@ -155,9 +155,10 @@ struct background
   double Neff; /**< so-called "effective neutrino number", computed at earliest time in interpolation table */
   double Omega0_dcdm; /**< \f$ \Omega_{0 dcdm} \f$: decaying cold dark matter */
   double Omega0_dr; /**< \f$ \Omega_{0 dr} \f$: decay radiation */
-  double Omega0_dcdm2; /**< GFA: \f$ \Omega_{0 dcdm2} \f$: decaying cold dark matter */
-  double Omega0_dr2; /**< GFA: \f$ \Omega_{0 dr2} \f$: decay dark radiation */
-  double Omega0_wdm2; /**< GFA: \f$ \Omega_{0 wdm2} \f$: decay warm dark matter */
+  /* for shooting method */
+//  double Omega0_dcdm2; /**< GFA: \f$ \Omega_{0 dcdm2} \f$: decaying cold dark matter */
+//  double Omega0_dr2; /**< GFA: \f$ \Omega_{0 dr2} \f$: decay dark radiation */
+//  double Omega0_wdm2; /**< GFA: \f$ \Omega_{0 wdm2} \f$: decay warm dark matter */
   double Omega0_m;  /**< total non-relativistic matter today */
   double Omega0_r;  /**< total ultra-relativistic radiation today */
   double Omega0_de; /**< total dark energy density today, currently defined as 1 - Omega0_m - Omega0_r - Omega0_k */
