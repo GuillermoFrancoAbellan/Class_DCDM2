@@ -893,8 +893,8 @@ int background_indices(
       pba->has_dr = _TRUE_;
   }
 
-//  if (pba->Omega0_dcdm2dr2wdm2 != 0.) { /* for shooting method */
-if (pba->Gamma_dcdm2 != 0. ) {
+
+if ( (pba->Gamma_dcdm2 != 0.) || (pba->Omega0_dcdm2dr2wdm2 != 0.) ) {
     pba->has_dcdm2 = _TRUE_;
     pba->has_cdm = _FALSE_;   /** GFA: to avoid having both cdm and dcdm components */
   }
@@ -1672,10 +1672,8 @@ int background_solve(
   int last_index=0;
   /* comoving radius coordinate in Mpc (equal to conformal distance in flat case) */
   double comoving_radius=0.;
-  /* GFA: scale factor at recombination    */
-  double a_rec;
-  /* GFA: proper time at recombination  */
-  double trec;
+  /* GFA: proper time at the beginning of the decay */
+  double t_ini;
   /* GFA: stepsize in scale factor for the integrals appearing in dr2 and wdm2 computation   */
   double step_a;
   /* GFA: auxiliary variable: for storing previous value of the scale factor (used in dr2 and wdm2 computation) */
@@ -1723,9 +1721,6 @@ int background_solve(
 
   /* GFA: initialize the integral for the wdm2 computation*/
   pba->integral_wdm2=0.;
-
-  a_rec = 1./(1.+1089.); /* GFA: ideally this should be obtained by calling to the thermodynamics module, */
-                        /* but this requires calling previously to the background module  */
 
   /** - loop over integration steps: call background_functions(), find step size, save data in growTable with gt_add(), perform one step with generic_integrator(), store new value of tau */
 
@@ -1779,26 +1774,30 @@ int background_solve(
 
     if (pba->has_dcdm2==_TRUE_){
     /* GFA: compute wdm2 density  */
-    if (pvecback_integration[pba->index_bi_a]<a_rec) {
+    if (pvecback_integration[pba->index_bi_a]<pba->a_ini_dcdm2) {
      pvecback_integration[pba->index_bi_rho_wdm2]=0.0;
      }  else {
-       if (pvecback_integration[pba->index_bi_a]<(a_rec+1.e-5)) {  /* GFA: by trial I've checked that, with this tolerance, it computes trec just once, as it should */
-         trec = pvecback_integration[pba->index_bi_time];          /* However, this method is horrible, IMPROVE */
-      /*  printf("-> t_rec = %f Gyr \n",trec/_Gyr_over_Mpc_);
-      */
+       if (pvecback_integration[pba->index_bi_a]<(pba->a_ini_dcdm2+1.e-5)) {  /* GFA: by trial I've checked that, with this tolerance, it computes t_ini just once, as it should */
+         t_ini = pvecback_integration[pba->index_bi_time];          /* However, this method is horrible, IMPROVE */
+      //  printf("-> t_ini = %f Gyr \n",t_ini/_Gyr_over_Mpc_);
         }
-      /* GFA: With this definition, the value of the step keeps changing each time */
-      step_a=pvecback_integration[pba->index_bi_a]-a_past;
-      /*printf("step_a= %f \n",step_a);
-      */
+      step_a=pvecback_integration[pba->index_bi_a]-a_past; /* GFA: Note that the value of the step in a keeps changing each time, as opposed to the step in tau */
+      // printf("step_a= %e \n",step_a);
       /* GFA: compute iteratively integrals needed for the wdm2 computation (simple trapezoidal rule)*/
       sqrt_integrand=sqrt((pow(pba->varepsilon,2)/(1.-2.*pba->varepsilon))*pow(a_past/pvecback_integration[pba->index_bi_a],2)+1.);
-      pba->integral_wdm2 += step_a*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-trec))/(a_past*H_past);
-      pvecback_integration[pba->index_bi_rho_wdm2]=
-      pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
-     /* for shooting method */
-    //  pvecback_integration[pba->index_bi_rho_wdm2]=
-    //  pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
+      //pba->integral_wdm2 += step_a*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/(a_past*H_past); /* GFA: integral in a */
+      pba->integral_wdm2 += ppr->back_integration_stepsize *sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/H_past;  /* GFA: integral in tau  */
+
+
+
+     if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method */
+       pvecback_integration[pba->index_bi_rho_wdm2]=
+       pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
+     } else {
+       pvecback_integration[pba->index_bi_rho_wdm2]=
+       pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
+     }
+
     }
    }
 
@@ -1855,11 +1854,11 @@ int background_solve(
   }
 
   /* GFA: contribution of decaying dark matter, dark radiation and warm dark matter to the critical density today:   */
-  //if (pba->has_dcdm2 ==_TRUE_){
-//    pba->Omega0_dcdm2=pvecback_integration[pba->index_bi_rho_dcdm2]/pba->H0/pba->H0;
-//    pba->Omega0_dr2=pvecback_integration[pba->index_bi_rho_dr2]/pba->H0/pba->H0;
-//    pba->Omega0_wdm2=pvecback_integration[pba->index_bi_rho_wdm2]/pba->H0/pba->H0;
-//  }
+  if (pba->has_dcdm2 ==_TRUE_){
+    pba->Omega0_dcdm2=pvecback_integration[pba->index_bi_rho_dcdm2]/pba->H0/pba->H0;
+    pba->Omega0_dr2=pvecback_integration[pba->index_bi_rho_dr2]/pba->H0/pba->H0;
+    pba->Omega0_wdm2=pvecback_integration[pba->index_bi_rho_wdm2]/pba->H0/pba->H0;
+  }
 
   /** - allocate background tables */
   class_alloc(pba->tau_table,pba->bt_size * sizeof(double),pba->error_message);
@@ -1971,15 +1970,15 @@ int background_solve(
              pba->Omega0_dr+pba->Omega0_dcdm,pba->Omega0_dcdmdr);
       printf("     -> Omega_ini_dcdm/Omega_b = %f\n",pba->Omega_ini_dcdm/pba->Omega0_b);
     }
-  // if (pba->has_dcdm2==_TRUE_) {  /* GFA */
-  //   printf("  (Two-body) Decaying Cold Dark Matter details: (DCDM2 --> DR2+WDM2)\n");
-  //   printf("     -> Omega0_dcdm2 = %f\n",pba->Omega0_dcdm2);
-  //   printf("     -> Omega0_dr2 = %f\n",pba->Omega0_dr2);
-  //   printf("     -> Omega0_wdm2 = %f\n",pba->Omega0_wdm2);
-  //   printf("     -> Omega0_dr2+Omega0_dcdm2+Omega0_wdm2 = %f, input value = %f\n",
-  //          pba->Omega0_dr2+pba->Omega0_dcdm2+pba->Omega0_wdm2,pba->Omega0_dcdm2dr2wdm2);
-  //   printf("     -> Omega_ini_dcdm2/Omega_b = %f\n",pba->Omega_ini_dcdm2/pba->Omega0_b);
-  // }
+   if (pba->has_dcdm2==_TRUE_) {  /* GFA */
+     printf("  (Two-body) Decaying Cold Dark Matter details: (DCDM2 --> DR2+WDM2)\n");
+     printf("     -> Omega0_dcdm2 = %f\n",pba->Omega0_dcdm2);
+     printf("     -> Omega0_dr2 = %f\n",pba->Omega0_dr2);
+     printf("     -> Omega0_wdm2 = %f\n",pba->Omega0_wdm2);
+     printf("     -> Omega0_dr2+Omega0_dcdm2+Omega0_wdm2 = %f, input value = %f\n",
+            pba->Omega0_dr2+pba->Omega0_dcdm2+pba->Omega0_wdm2,pba->Omega0_dcdm2dr2wdm2);
+     printf("     -> Omega_ini_dcdm2/Omega_b = %f\n",pba->Omega_ini_dcdm2/pba->Omega0_b);
+   }
     if (pba->has_scf == _TRUE_){
       printf("    Scalar field details:\n");
       printf("     -> Omega_scf = %g, wished %g\n",
@@ -2034,6 +2033,7 @@ int background_initial_conditions(
 
   double rho_ncdm, p_ncdm, rho_ncdm_rel_tot=0.;
   double f,Omega_rad, rho_rad;
+  double f2; /* GFA  */
   int counter,is_early_enough,n_ncdm;
   double scf_lambda;
   double rho_fld_today;
@@ -2106,7 +2106,7 @@ int background_initial_conditions(
     if (pba->has_dcdm == _TRUE_){
       /**  - f is the critical density fraction of DR. The exact solution is:
        *
-       * `f = -Omega_rad+pow(pow(Omega_rad,3./2.)+0.5*pow(a/pba->a_today,6)*pvecback_integration[pba->index_bi_rho_dcdm]*pba->Gamma_dcdm/pow(pba->H0,3),2./3.);`
+        `f = -Omega_rad+pow(pow(Omega_rad,3./2.)+0.5*pow(a/pba->a_today,6)*pvecback_integration[pba->index_bi_rho_dcdm]*pba->Gamma_dcdm/pow(pba->H0,3),2./3.);`
        *
        * but it is not numerically stable for very small f which is always the case.
        * Instead we use the Taylor expansion of this equation, which is equivalent to
@@ -2114,6 +2114,9 @@ int background_initial_conditions(
        */
       f = 1./3.*pow(a/pba->a_today,6)*pvecback_integration[pba->index_bi_rho_dcdm]*pba->Gamma_dcdm/pow(pba->H0,3)/sqrt(Omega_rad);
       pvecback_integration[pba->index_bi_rho_dr] = f*pba->H0*pba->H0/pow(a/pba->a_today,4);
+      // printf("rho_dr_ini=%e \n",pvecback_integration[pba->index_bi_rho_dr]);
+      // This initial rho_dr is actually quite big, of the order of 10^6 (in units of Mpc^-2)
+      // (but still much smaller than initial rho_tot, of order 10^44 Mpc^-2)
     }
     else{
       /** There is also a space reserved for a future case where dr is not sourced by dcdm */
@@ -2123,12 +2126,22 @@ int background_initial_conditions(
 
   /* GFA  */
   if (pba->has_dcdm2==_TRUE_) {
-    pvecback_integration[pba->index_bi_rho_dcdm2]=
-    pba->Omega0_cdm*pow(pba->H0,2)*pow(pba->a_today/a,3);
-    /* for shooting method  */
-  //  pvecback_integration[pba->index_bi_rho_dcdm2]=
-  //  pba->Omega_ini_dcdm2*pow(pba->H0,2)*pow(pba->a_today/a,3);
-    pvecback_integration[pba->index_bi_rho_dr2]=1.e-15; /* GFA: If I set 0.0, it gives an error with the generic_integrator (stepsize underflow)  */
+   if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method  */
+       pvecback_integration[pba->index_bi_rho_dcdm2]=
+       pba->Omega_ini_dcdm2*pow(pba->H0,2)*pow(pba->a_today/a,3);
+
+   } else {
+     pvecback_integration[pba->index_bi_rho_dcdm2]=
+     pba->Omega0_cdm*pow(pba->H0,2)*pow(pba->a_today/a,3);
+   }
+
+    /* GFA: If I set 0.0 for dr2, it gives an error with the generic_integrator (stepsize underflow)  */
+    pvecback_integration[pba->index_bi_rho_dr2]=1.e-15;
+    /* If I use the same initial conditions for dr2 as for the standard dr, it complaints  */
+    /* It might be related with the fact that we integrate from a_rec instead of a_init  */
+    /* Note that with this initial condition, the profile of rho_dr won't show a peak, it will be decreasing all the time */
+    //f2 = 1./3.*pow(a/pba->a_today,6)*pvecback_integration[pba->index_bi_rho_dcdm2]*pba->Gamma_dcdm2/pow(pba->H0,3)/sqrt(Omega_rad);
+    //pvecback_integration[pba->index_bi_rho_dr2]=f2*pba->varepsilon*pba->H0*pba->H0/pow(a/pba->a_today,4);
     pvecback_integration[pba->index_bi_rho_wdm2]=0.0;
   }
 
@@ -2469,10 +2482,6 @@ int background_derivs(
   struct background_parameters_and_workspace * pbpaw;
   struct background * pba;
   double * pvecback, a, H, rho_M;
-  double arec;  /* GFA: scale factor at recombination  */
-
-  arec = 1./(1.+1089.); /* GFA: ideally this should be obtained by calling to the thermodynamics module, */
-                        /* but this requires calling previously to the background module  */
 
   pbpaw = parameters_and_workspace;
   pba =  pbpaw->pba;
@@ -2522,10 +2531,10 @@ int background_derivs(
 
   /* GFA  */
   if (pba->has_dcdm2 == _TRUE_) {
-    if (a < arec) {
-      /* DCDM2, behaves as CDM before recombination  */
+    if (a < pba->a_ini_dcdm2) {
+      /* DCDM2, behaves as CDM before a_ini */
        dy[pba->index_bi_rho_dcdm2]=-3.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dcdm2];
-       /* No DR2 before recombination  */
+       /* No DR2 before a_ini */
        dy[pba->index_bi_rho_dr2]=0.;
     } else {
        /* DCDM2 */

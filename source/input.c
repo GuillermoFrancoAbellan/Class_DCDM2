@@ -276,19 +276,19 @@ int input_init(
    *
    */
 
-  char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr",
-                                        "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm","sigma8"};
-  char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm",
-                                         "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr","A_s"};
-  enum computation_stage target_cs[] = {cs_thermodynamics, cs_background, cs_background,
-                                         cs_background, cs_background, cs_background, cs_nonlinear};
+//  char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr",
+//                                        "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm","sigma8"};
+//  char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm",
+//                                         "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr","A_s"};
+//  enum computation_stage target_cs[] = {cs_thermodynamics, cs_background, cs_background,
+//                                         cs_background, cs_background, cs_background, cs_nonlinear};
   /* GFA: Added four new target_namestrings, each one with their corresponding unknown_parameter and target_cs  */
-//  char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr","Omega_dcdmdrwdm", "omega_dcdmdrwdm",
-  //                                     "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm","Omega_ini_dcdm2","omega_ini_dcdm2","sigma8"};
-//  char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm","Omega_ini_dcdm2","Omega_ini_dcdm2",
-//                                        "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr","Omega_dcdmdrwdm","omega_dcdmdrwdm","A_s"};
-//  enum computation_stage target_cs[] = {cs_thermodynamics, cs_background, cs_background, cs_background, cs_background,
-//                                        cs_background, cs_background, cs_background, cs_background, cs_background, cs_nonlinear};
+  char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr","Omega_dcdmdrwdm", "omega_dcdmdrwdm",
+                                       "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm","Omega_ini_dcdm2","omega_ini_dcdm2","sigma8"};
+  char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm","Omega_ini_dcdm2","Omega_ini_dcdm2",
+                                        "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr","Omega_dcdmdrwdm","omega_dcdmdrwdm","A_s"};
+  enum computation_stage target_cs[] = {cs_thermodynamics, cs_background, cs_background, cs_background, cs_background,
+                                        cs_background, cs_background, cs_background, cs_background, cs_background, cs_nonlinear};
 
   int input_verbose = 0, int1, aux_flag, shooting_failed=_FALSE_;
 
@@ -873,7 +873,7 @@ int input_read_parameters(
   if (flag2 == _TRUE_)
     pba->Omega0_cdm = param2/pba->h/pba->h;
 
-
+/* GFA: The contribution of cdm to omega_tot is added later  */
   /** - Omega_0_dcdmdr (DCDM) */
   class_call(parser_read_double(pfc,"Omega_dcdmdr",&param1,&flag1,errmsg),
              errmsg,
@@ -917,65 +917,74 @@ int input_read_parameters(
 
   /** - GFA: Omega_0_dcdmdrwdm (DCDM) */
   /* for shooting method */
-//  class_call(parser_read_double(pfc,"Omega_dcdmdrwdm",&param1,&flag1,errmsg),
-//             errmsg,
-//             errmsg);
-//  class_call(parser_read_double(pfc,"omega_dcdmdrwdm",&param2,&flag2,errmsg),
-//             errmsg,
-//             errmsg);
-//  class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
-//             errmsg,
-//             "In input file, you can only enter one of Omega_dcdmdrwdm or omega_dcdmdrwdm, choose one");
-//  if (flag1 == _TRUE_)
-//    pba->Omega0_dcdm2dr2wdm2 = param1;
-//  if (flag2 == _TRUE_)
-//    pba->Omega0_dcdm2dr2wdm2 = param2/pba->h/pba->h;
+  class_call(parser_read_double(pfc,"Omega_dcdmdrwdm",&param1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+  class_call(parser_read_double(pfc,"omega_dcdmdrwdm",&param2,&flag2,errmsg),
+             errmsg,
+             errmsg);
+  class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
+             errmsg,
+             "In input file, you can only enter one of Omega_dcdmdrwdm or omega_dcdmdrwdm, choose one");
+  if (flag1 == _TRUE_)
+    pba->Omega0_dcdm2dr2wdm2 = param1;
+  if (flag2 == _TRUE_)
+    pba->Omega0_dcdm2dr2wdm2 = param2/pba->h/pba->h;
 
-//  if (pba->Omega0_dcdm2dr2wdm2 >0)   {
-//   Omega_tot += pba->Omega0_dcdm2dr2wdm2;
+  if (pba->Omega0_dcdm2dr2wdm2 >0)   {
+   Omega_tot += pba->Omega0_dcdm2dr2wdm2;
 
    /** - Read Omega_ini_dcdm2 or omega_ini_dcdm2 */
-//   class_call(parser_read_double(pfc,"Omega_ini_dcdm2",&param1,&flag1,errmsg),
-//              errmsg,
-//              errmsg);
-//   class_call(parser_read_double(pfc,"omega_ini_dcdm2",&param2,&flag2,errmsg),
-//              errmsg,
-//              errmsg);
-//   class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
-//              errmsg,
-//              "In input file, you can only enter one of Omega_ini_dcdm2 or omega_ini_dcdm2, choose one");
+   class_call(parser_read_double(pfc,"Omega_ini_dcdm2",&param1,&flag1,errmsg),
+              errmsg,
+              errmsg);
+   class_call(parser_read_double(pfc,"omega_ini_dcdm2",&param2,&flag2,errmsg),
+              errmsg,
+              errmsg);
+   class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
+              errmsg,
+              "In input file, you can only enter one of Omega_ini_dcdm2 or omega_ini_dcdm2, choose one");
 
-//   if (flag1 == _TRUE_)
-//     pba->Omega_ini_dcdm2 = param1;
-//   if (flag2 == _TRUE_)
-//     pba->Omega_ini_dcdm2 = param2/pba->h/pba->h;
+   if (flag1 == _TRUE_)
+     pba->Omega_ini_dcdm2 = param1;
+   if (flag2 == _TRUE_)
+     pba->Omega_ini_dcdm2 = param2/pba->h/pba->h;
 
   /** GFA: - Read Gamma2 (two-body decay) in same units as H0, i.e. km/(s Mpc)*/
-//    class_read_double("Gamma_dcdm2",pba->Gamma_dcdm2);
-    /* GFA: Convert Gamma to Mpc */
-//    pba->Gamma_dcdm2 *= (1.e3 / _c_);
-    /** GFA: - Read varepsilon (two-body decay)   */
-//    class_read_double("varepsilon",pba->varepsilon);
-//    class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
-//    "The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
-
-//  }
-
-/** GFA: - Read Gamma2 (two-body decay) in same units as H0, i.e. km/(s Mpc)*/
     class_read_double("Gamma_dcdm2",pba->Gamma_dcdm2);
-  /* GFA: Convert Gamma to Mpc */
+    /* GFA: Convert Gamma to Mpc */
     pba->Gamma_dcdm2 *= (1.e3 / _c_);
-  /** GFA: - Read varepsilon (two-body decay)   */
+/* GFA: Read initial scale factor for the two-body decay  */
+ class_read_double("a_ini_dcdm2",pba->a_ini_dcdm2);
+ class_test(pba->a_ini_dcdm2>pow(1.+1089.,-1),errmsg,
+ "The value that you chose for the initial scale factor of the two-body decay, %e, is too big", pba->a_ini_dcdm2);
+    /** GFA: - Read varepsilon (two-body decay)   */
     class_read_double("varepsilon",pba->varepsilon);
     class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
     "The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
 
-if (pba->Gamma_dcdm2>0) {
-  Omega_tot += pba->Omega0_cdm;
-  /** GFA: This is not quite correct, dcdm2 density today is a bit smaller than present cdm density because of the decay */
-  /* and we should consider as well the present densities of dark radiation (dr2) and warm dark matter (wdm2)  */
-  /* This might require a shooting method, necessary for computing a correct Omega0_lambda   */
- }
+  } else {
+    /** GFA: - Read Gamma2 (two-body decay) in same units as H0, i.e. km/(s Mpc)*/
+    class_read_double("Gamma_dcdm2",pba->Gamma_dcdm2);
+      /* GFA: Convert Gamma to Mpc */
+    pba->Gamma_dcdm2 *= (1.e3 / _c_);
+      /* GFA: Read initial scale factor for the two-body decay  */
+    class_read_double("a_ini_dcdm2",pba->a_ini_dcdm2);
+    class_test(pba->a_ini_dcdm2>pow(1.+1089.,-1),errmsg,
+    "The value that you chose for the initial scale factor of the two-body decay, %e, is too big", pba->a_ini_dcdm2);
+      /** GFA: - Read varepsilon (two-body decay)   */
+    class_read_double("varepsilon",pba->varepsilon);
+    class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
+    "The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
+    if (pba->Gamma_dcdm2>0) {
+      Omega_tot += pba->Omega0_cdm;
+      /** GFA: This is not quite correct, dcdm2 density today is a bit smaller than present cdm density because of the decay */
+      /* and we should consider as well the present densities of dark radiation (dr2) and warm dark matter (wdm2)  */
+      /* This might require a shooting method, necessary for computing a correct Omega0_lambda   */
+     }
+  }
+
+
  /** GFA: only add cdm if there is no dcdm (of any type) */
   if (pba->Gamma_dcdm == 0.0 && pba->Gamma_dcdm2 ==0.0){
   Omega_tot += pba->Omega0_cdm;
@@ -3032,11 +3041,12 @@ pba->Omega0_ur = 3.046*7./8.*pow(4./11.,4./3.)*pba->Omega0_g;
 pba->Omega0_b = 0.022032/pow(pba->h,2);
 pba->Omega0_cdm = 0.12038/pow(pba->h,2);
 pba->Omega0_dcdmdr = 0.0;
-// pba->Omega0_dcdm2dr2wdm2=0.0; /* GFA, for shooting method */
+pba->Omega0_dcdm2dr2wdm2=0.0; /* GFA, for shooting method */
 pba->Omega0_dcdm = 0.0;
 pba->Gamma_dcdm = 0.0;
 pba->Gamma_dcdm2 = 0.0; /* GFA */
 pba->varepsilon=0.45;   /* GFA */
+pba->a_ini_dcdm2=1./(1.+1089.);
 pba->N_ncdm = 0;
 pba->Omega0_ncdm_tot = 0.;
 pba->ksi_ncdm_default = 0.;
@@ -3500,7 +3510,7 @@ struct output op;           /* for output files */
 
 int i;
 double rho_dcdm_today, rho_dr_today;
-// double rho_dcdm2_today, rho_dr2_today, rho_wdm2_today; /* GFA  */
+double rho_dcdm2_today, rho_dr2_today, rho_wdm2_today; /* GFA  */
 struct fzerofun_workspace * pfzw;
 int input_verbose;
 int flag;
@@ -3678,18 +3688,18 @@ case omega_dcdmdr:
     rho_dr_today = 0.;
   output[i] = (rho_dcdm_today+rho_dr_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;
   break;
-// case Omega_dcdmdrwdm:  /* GFA*/
-//  rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
-//  rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
-//  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
-//  output[i] = (rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)-pfzw->target_value[i];
-//  break;
-// case omega_dcdmdrwdm: /* GFA*/
-//  rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
-//  rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
-//  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
-//  output[i] = (rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;;
-//  break;
+ case Omega_dcdmdrwdm:  /* GFA*/
+  rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
+  rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
+  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+  output[i] = (rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)-pfzw->target_value[i];
+  break;
+ case omega_dcdmdrwdm: /* GFA*/
+  rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
+  rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
+  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+  output[i] = (rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;;
+  break;
 case Omega_scf:
   /** - In case scalar field is used to fill, pba->Omega0_scf is not equal to pfzw->target_value[i].*/
   output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_scf]/(ba.H0*ba.H0)
@@ -3704,13 +3714,13 @@ case omega_ini_dcdm:
     rho_dr_today = 0.;
   output[i] = -(rho_dcdm_today+rho_dr_today)/(ba.H0*ba.H0)+ba.Omega0_dcdmdr;
   break;
-//case Omega_ini_dcdm2: /*GFA */
-//case omega_ini_dcdm2:
-//  rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
-//  rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
-//  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
-//  output[i]=-(rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)+ba.Omega0_dcdm2dr2wdm2;
-//  break;
+case Omega_ini_dcdm2: /*GFA */
+case omega_ini_dcdm2:
+  rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
+  rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
+  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+  output[i]=-(rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)+ba.Omega0_dcdm2dr2wdm2;
+  break;
 case sigma8:
   output[i] = nl.sigma8[nl.index_pk_m]-pfzw->target_value[i];
   break;
@@ -3767,7 +3777,7 @@ struct output op;           /* for output files */
 int i;
 
 double Omega_M, a_decay, gamma, Omega0_dcdmdr=1.0;
-// double Omega0_dcdm2dr2wdm2=1.0; /*GFA */
+ double Omega0_dcdm2dr2wdm2=1.0; /*GFA */
 int index_guess;
 
 /* Cheat to read only known parameters: */
@@ -3859,27 +3869,27 @@ case omega_dcdmdr:
     //printf("x = Omega_ini_guess = %g, dxdy = %g\n",*xguess,*dxdy);
   break;
 
-// case Omega_dcdmdrwdm: /* GFA */
-// Omega_M =ba.Omega0_dcdm2dr2wdm2+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
-// gamma = ba.Gamma_dcdm2/ba.H0;
-// if (gamma < 1)
-//   a_decay = 1.0;
-// else
-// a_decay = pow(1+(gamma*gamma-1.)/Omega_M,-1./3.);
-// xguess[index_guess] = pfzw->target_value[index_guess]/a_decay;
-// dxdy[index_guess] = 1./a_decay;
-// break;
+ case Omega_dcdmdrwdm: /* GFA */
+   Omega_M =ba.Omega0_dcdm2dr2wdm2+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+   gamma = ba.Gamma_dcdm2/ba.H0;
+  if (gamma < 1)
+    a_decay = 1.0;
+  else
+    a_decay = pow(1+(gamma*gamma-1.)/Omega_M,-1./3.);
+  xguess[index_guess] = pfzw->target_value[index_guess]/a_decay;
+  dxdy[index_guess] = 1./a_decay;
+  break;
 
-// case omega_dcdmdrwdm: /* GFA */
-// Omega_M =ba.Omega0_dcdm2dr2wdm2+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
-// gamma = ba.Gamma_dcdm2/ba.H0;
-// if (gamma < 1)
-//   a_decay = 1.0;
-// else
-// a_decay = pow(1+(gamma*gamma-1.)/Omega_M,-1./3.);
-// xguess[index_guess] = pfzw->target_value[index_guess]/ba.h/ba.h/a_decay;
-// dxdy[index_guess] = 1./a_decay/ba.h/ba.h;
-// break;
+ case omega_dcdmdrwdm: /* GFA */
+   Omega_M =ba.Omega0_dcdm2dr2wdm2+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+   gamma = ba.Gamma_dcdm2/ba.H0;
+ if (gamma < 1)
+    a_decay = 1.0;
+ else
+    a_decay = pow(1+(gamma*gamma-1.)/Omega_M,-1./3.);
+ xguess[index_guess] = pfzw->target_value[index_guess]/ba.h/ba.h/a_decay;
+ dxdy[index_guess] = 1./a_decay/ba.h/ba.h;
+ break;
 
 case Omega_scf:
 
@@ -3921,24 +3931,24 @@ case Omega_ini_dcdm:
 
   //printf("x = Omega_ini_guess = %g, dxdy = %g\n",*xguess,*dxdy);
   break;
-//case omega_ini_dcdm2:
-//  Omega0_dcdm2dr2wdm2 = 1./(ba.h*ba.h);
-// 7case Omega_ini_dcdm2:
+case omega_ini_dcdm2:
+  Omega0_dcdm2dr2wdm2 = 1./(ba.h*ba.h);
+case Omega_ini_dcdm2:
     /** - This works since correspondence is
         Omega_ini_dcdm2 -> Omega_dcdmdrwdm and
         omega_ini_dcdm2 -> omega_dcdmdrwdm */
-//  Omega0_dcdm2dr2wdm2*=pfzw->target_value[index_guess];
-//  Omega_M = Omega0_dcdm2dr2wdm2+ba.Omega0_b;  /* GFA: I imposed that we cannot have both cdm and dcdm components  */
-//  gamma = ba.Gamma_dcdm2/ba.H0;
-//  if (gamma < 1)
-//    a_decay = 1.0;
-//  else
-//    a_decay = pow(1+(gamma*gamma-1.)/Omega_M,-1./3.);
-//  xguess[index_guess] = pfzw->target_value[index_guess]*a_decay;
-//  dxdy[index_guess] = a_decay;
-//  if (gamma > 100)
-//    dxdy[index_guess] *= gamma/100;
-//  break;
+  Omega0_dcdm2dr2wdm2*=pfzw->target_value[index_guess];
+  Omega_M = Omega0_dcdm2dr2wdm2+ba.Omega0_b;  /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+  gamma = ba.Gamma_dcdm2/ba.H0;
+  if (gamma < 1)
+     a_decay = 1.0;
+  else
+     a_decay = pow(1+(gamma*gamma-1.)/Omega_M,-1./3.);
+  xguess[index_guess] = pfzw->target_value[index_guess]*a_decay;
+  dxdy[index_guess] = a_decay;
+  if (gamma > 100)
+    dxdy[index_guess] *= gamma/100;
+  break;
 
 case sigma8:
   /* Assume linear relationship between A_s and sigma8 and fix coefficient
