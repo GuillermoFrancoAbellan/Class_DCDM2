@@ -2053,7 +2053,7 @@ int background_initial_conditions(
   double a;
 
   double rho_ncdm, p_ncdm, rho_ncdm_rel_tot=0.;
-  double f,Omega_rad, rho_rad;
+  double f,Omega_rad, Omega_mat, rho_rad;
   double f2; /* GFA  */
   int counter,is_early_enough,n_ncdm;
   double scf_lambda;
@@ -2108,6 +2108,7 @@ int background_initial_conditions(
 
   /* Set initial values of {B} variables: */
   Omega_rad = pba->Omega0_g;
+  Omega_mat = pba->Omega0_b;  /* GFA  */
   if (pba->has_ur == _TRUE_)
     Omega_rad += pba->Omega0_ur;
   rho_rad = Omega_rad*pow(pba->H0,2)/pow(a/pba->a_today,4);
@@ -2122,6 +2123,11 @@ int background_initial_conditions(
     if (pba->background_verbose > 3)
       printf("Density is %g. a_today=%g. Omega_ini=%g\n",pvecback_integration[pba->index_bi_rho_dcdm],pba->a_today,pba->Omega_ini_dcdm);
   }
+
+  if (pba->has_cdm ==_TRUE_) {
+    Omega_mat += pba->Omega0_cdm; /* GFA */
+  }
+
 
   if (pba->has_dr == _TRUE_){
     if (pba->has_dcdm == _TRUE_){
@@ -2150,10 +2156,12 @@ int background_initial_conditions(
    if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method  */
        pvecback_integration[pba->index_bi_rho_dcdm2]=
        pba->Omega_ini_dcdm2*pow(pba->H0,2)*pow(pba->a_today/a,3);
+       Omega_mat += pba->Omega_ini_dcdm2; /* GFA  */
 
    } else {
      pvecback_integration[pba->index_bi_rho_dcdm2]=
      pba->Omega0_cdm*pow(pba->H0,2)*pow(pba->a_today/a,3);
+     Omega_mat += pba->Omega0_cdm; /* GFA  */
    }
 
     /* GFA: If I set 0.0 for dr2, it gives an error with the generic_integrator (stepsize underflow)  */
