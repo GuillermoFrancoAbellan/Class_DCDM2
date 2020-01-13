@@ -168,7 +168,6 @@ struct background
   double z_eq;      /**< redshift at radiation/matter equality */
   double tau_eq;    /**< conformal time at radiation/matter equality [Mpc] */
   double varepsilon;    /**< GFA: fraction of energy of the dcdm deposited in dr (two-body decay) */
-  double integral_wdm2; /**< GFA: auxiliary variable: integral needed to compute wdm2 density  */
 
   //@}
 
@@ -203,6 +202,7 @@ struct background
   int index_bg_rho_dcdm2;     /**< GFA: dcdm density (two-body decay) */
   int index_bg_rho_dr2;       /**< GFA: dr density (two-body decay) */
   int index_bg_rho_wdm2;      /**< GFA: wdm density (two-body decay)    */
+  int index_bg_w_wdm2;        /**< GFA: wdm equation of state parameter   */
 
   int index_bg_phi_scf;       /**< scalar field value */
   int index_bg_phi_prime_scf; /**< scalar field derivative wrt conformal time */
@@ -282,6 +282,7 @@ struct background
   int index_bi_rho_dcdm2; /**< GFA: {B} dcdm2 density*/
   int index_bi_rho_dr2;   /**< GFA: {B} dr2 density*/
   int index_bi_rho_wdm2;  /**< GFA: {B} wdm2 density*/
+  int index_bi_w_wdm2; /**< GFA: {B} equation of state parameter for wdm2   */
   int index_bi_rho_fld; /**< {B} fluid density */
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
