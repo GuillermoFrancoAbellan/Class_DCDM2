@@ -1801,22 +1801,24 @@ int background_solve(
       step_a=pvecback_integration[pba->index_bi_a]-a_past; /* GFA: Note that the value of the step in a keeps changing each time, as opposed to the step in tau */
       // printf("step_a= %e \n",step_a);
       /* GFA: compute iteratively integrals needed for the wdm2 computation (simple trapezoidal rule)*/
-      sqrt_integrand=sqrt((pow(pba->varepsilon,2)/(1.-2.*pba->varepsilon))*pow(a_past/pvecback_integration[pba->index_bi_a],2)+1.);
+      sqrt_integrand=sqrt(pow(pba->varepsilon,2.)*pow(a_past,2.)+(1.-2.*pba->varepsilon)*pow(pvecback_integration[pba->index_bi_a],2.));
       //integral_wdm2 += step_a*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/(a_past*H_past); /* GFA: integral in a */
-      integral_wdm2 += ppr->back_integration_stepsize *sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/H_past;  /* GFA: integral in tau  */
+      integral_wdm2 += ppr->back_integration_stepsize*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/H_past;  /* GFA: integral in tau  */
 
      if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method */
        pvecback_integration[pba->index_bi_rho_wdm2]=
-       pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*integral_wdm2;
+       pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*integral_wdm2;
      } else {
        pvecback_integration[pba->index_bi_rho_wdm2]=
-       pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*integral_wdm2;
+       pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*integral_wdm2;
      }
 
      /* GFA: compute iteratively integrals needed for the equation of state parameter in wdm2  */
-     factor_w_wdm2=(1./3.)*pba->Gamma_dcdm2*(pow(pba->varepsilon,2)/pow(1.-pba->varepsilon,2))/(exp(-pba->Gamma_dcdm2*t_ini)-exp(-pba->Gamma_dcdm2*pvecback_integration[pba->index_bi_time]));
-    // integral_w_wdm2+=step_a*exp(-pba->Gamma_dcdm2*time_past)/(a_past*H_past*pow(1.-pba->varepsilon,-2)*(pow(pvecback_integration[pba->index_bi_a]/a_past,2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2))); /* GFA: integral in a  */
-     integral_w_wdm2+=ppr->back_integration_stepsize*exp(-pba->Gamma_dcdm2*time_past)/(H_past*pow(1.-pba->varepsilon,-2)*(pow(pvecback_integration[pba->index_bi_a]/a_past,2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2))); /* GFA: integral in tau */
+     /* CHECK THIS */
+     factor_w_wdm2=(1./3.)*pba->Gamma_dcdm2*pow(pba->varepsilon,2)*exp(pba->Gamma_dcdm2*t_ini)/(1.-exp(-pba->Gamma_dcdm2*(pvecback_integration[pba->index_bi_time]-t_ini)));
+     integral_w_wdm2+=step_a*a_past*exp(-pba->Gamma_dcdm2*time_past)/(H_past*(pow(pvecback_integration[pba->index_bi_a],2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2)*pow(a_past,2))); /* GFA: integral in a  */
+
+     // integral_w_wdm2+=ppr->back_integration_stepsize*a_past*exp(-pba->Gamma_dcdm2*time_past)/(H_past*(pow(pvecback_integration[pba->index_bi_a]/a_past,2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2))); /* GFA: integral in tau */
      pvecback_integration[pba->index_bi_w_wdm2]=factor_w_wdm2*integral_w_wdm2;
      /* GFA: It is not computing w_wdm2 properly (not similar at all to Fig.2 of 1410.0683v2) --> FIX THIS  */
     }
@@ -2174,13 +2176,13 @@ int background_initial_conditions(
    }
 
     /* GFA: If I set 0.0 for dr2, it gives an error with the generic_integrator (stepsize underflow)  */
-    // pvecback_integration[pba->index_bi_rho_dr2]=1.e-15;
+     pvecback_integration[pba->index_bi_rho_dr2]=1.e-15;
 
-    if (pba->a_ini_dcdm2<aeq) { /* GFA: decay starts in rad. era  */
-    pvecback_integration[pba->index_bi_rho_dr2]=f2*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
-    } else { /* GFA: decay starts in mat. era  */
-    pvecback_integration[pba->index_bi_rho_dr2]=f3*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
-    }
+  //  if (pba->a_ini_dcdm2<aeq) { /* GFA: decay starts in rad. era  */
+  //  pvecback_integration[pba->index_bi_rho_dr2]=f2*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
+  //  } else { /* GFA: decay starts in mat. era  */
+  //  pvecback_integration[pba->index_bi_rho_dr2]=f3*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
+  //  }
     /* Note that with this initial condition, the profile of rho_dr won't show a peak, it will be decreasing all the time */
 
 
