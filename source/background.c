@@ -2050,11 +2050,11 @@ int background_initial_conditions(
   /** - define local variables */
 
   /* scale factor */
-  double a;
+  double a, aeq; /* GFA */
 
   double rho_ncdm, p_ncdm, rho_ncdm_rel_tot=0.;
   double f,Omega_rad, Omega_mat, rho_rad;
-  double f2; /* GFA  */
+  double f2, f3; /* GFA  */
   int counter,is_early_enough,n_ncdm;
   double scf_lambda;
   double rho_fld_today;
@@ -2062,6 +2062,8 @@ int background_initial_conditions(
 
   /** - fix initial value of \f$ a \f$ */
   a = ppr->a_ini_over_a_today_default * pba->a_today;
+
+  aeq=1./(1.+3400.); /* GFA: scale factor at matter-radiation equality (we only need an estimation)  */
 
   /**  If we have ncdm species, perhaps we need to start earlier
       than the standard value for the species to be relativistic.
@@ -2157,20 +2159,31 @@ int background_initial_conditions(
        pvecback_integration[pba->index_bi_rho_dcdm2]=
        pba->Omega_ini_dcdm2*pow(pba->H0,2)*pow(pba->a_today/a,3);
        Omega_mat += pba->Omega_ini_dcdm2; /* GFA  */
-
+       /* compute critical density fraction of dr2 in radiation era (only valid for times much smaller than lifetime) */
+       f2 = (1./3.)*pba->varepsilon*pba->Omega_ini_dcdm2*pba->Gamma_dcdm2*pow(pba->a_ini_dcdm2/pba->a_today,3.)/(pba->H0*sqrt(Omega_rad));
+       /* compute critical density fraction of dr2 in matter era (only valid for times much smaller than lifetime) */
+       f3 = (2./5.)*pba->varepsilon*pba->Omega_ini_dcdm2*pba->Gamma_dcdm2*pow(pba->a_ini_dcdm2/pba->a_today,5./2.)/(pba->H0*sqrt(Omega_mat));
    } else {
-     pvecback_integration[pba->index_bi_rho_dcdm2]=
-     pba->Omega0_cdm*pow(pba->H0,2)*pow(pba->a_today/a,3);
-     Omega_mat += pba->Omega0_cdm; /* GFA  */
+       pvecback_integration[pba->index_bi_rho_dcdm2]=
+       pba->Omega0_cdm*pow(pba->H0,2)*pow(pba->a_today/a,3);
+       Omega_mat += pba->Omega0_cdm; /* GFA  */
+       /* compute critical density fraction of dr2 in radiation era (only valid for times much smaller than lifetime) */
+       f2 = (1./3.)*pba->varepsilon*pba->Omega0_cdm*pba->Gamma_dcdm2*pow(pba->a_ini_dcdm2/pba->a_today,3.)/(pba->H0*sqrt(Omega_rad));
+       /* compute critical density fraction of dr2 in matter era (only valid for times much smaller than lifetime) */
+       f3 = (2./5.)*pba->varepsilon*pba->Omega0_cdm*pba->Gamma_dcdm2*pow(pba->a_ini_dcdm2/pba->a_today,5./2.)/(pba->H0*sqrt(Omega_mat));
    }
 
     /* GFA: If I set 0.0 for dr2, it gives an error with the generic_integrator (stepsize underflow)  */
-    pvecback_integration[pba->index_bi_rho_dr2]=1.e-15;
-    /* If I use the same initial conditions for dr2 as for the standard dr, it complaints  */
-    /* It might be related with the fact that we integrate from a_rec instead of a_init  */
+    // pvecback_integration[pba->index_bi_rho_dr2]=1.e-15;
+
+    if (pba->a_ini_dcdm2<aeq) { /* GFA: decay starts in rad. era  */
+    pvecback_integration[pba->index_bi_rho_dr2]=f2*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
+    } else { /* GFA: decay starts in mat. era  */
+    pvecback_integration[pba->index_bi_rho_dr2]=f3*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
+    }
     /* Note that with this initial condition, the profile of rho_dr won't show a peak, it will be decreasing all the time */
-    //f2 = 1./3.*pow(a/pba->a_today,6)*pvecback_integration[pba->index_bi_rho_dcdm2]*pba->Gamma_dcdm2/pow(pba->H0,3)/sqrt(Omega_rad);
-    //pvecback_integration[pba->index_bi_rho_dr2]=f2*pba->varepsilon*pba->H0*pba->H0/pow(a/pba->a_today,4);
+
+
     pvecback_integration[pba->index_bi_rho_wdm2]=0.0;
     pvecback_integration[pba->index_bi_w_wdm2]=0.0;
   }

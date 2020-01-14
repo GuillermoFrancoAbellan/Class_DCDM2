@@ -933,6 +933,7 @@ int input_read_parameters(
 
   if (pba->Omega0_dcdm2dr2wdm2 >0)   {
    Omega_tot += pba->Omega0_dcdm2dr2wdm2;
+   printf(" Omega_dcdmdrwdm=%e \n",pba->Omega0_dcdm2dr2wdm2);
 
    /** - Read Omega_ini_dcdm2 or omega_ini_dcdm2 */
    class_call(parser_read_double(pfc,"Omega_ini_dcdm2",&param1,&flag1,errmsg),
