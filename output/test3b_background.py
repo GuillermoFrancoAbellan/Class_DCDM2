@@ -38,7 +38,7 @@ fig, ax = plt.subplots()
 
 curve = data[0]
 ax.set_xlim([1e-3,1])
-ax.set_ylim([0.01296,0.013])
+#ax.set_ylim([0.32,0.330])
 ax.plot(1/(1+curve[:, 0]), abs(curve[:, 16]),label=r'$w_2 \ (CLASS) $')
 ax.set_title(r'$\Omega_{cdm}=0.24, \, \tau=35.5 \, \rm{Gyr}, \, \epsilon=0.166, \, h=0.7$')
 ax.set_xscale('log')
