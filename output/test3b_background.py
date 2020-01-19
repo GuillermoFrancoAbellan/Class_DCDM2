@@ -3,8 +3,8 @@ import numpy as np
 
 
 
-files = ['/Users/gfranco/class_DCDM2/output/test3_background.dat']
-#files = ['/home/guillermo/class_DCDM2/output/test3_background.dat']
+#files = ['/Users/gfranco/class_DCDM2/output/test3_background.dat']
+files = ['/home/guillermo/class_DCDM2/output/test3_background.dat']
 data = []
 for data_file in files:
     data.append(np.loadtxt(data_file))
@@ -28,8 +28,8 @@ plt.show()
 
 #%%
 
-files = ['/Users/gfranco/class_DCDM2/output/test3_background.dat']
-#files = ['/home/guillermo/class_DCDM2/output/test3_background.dat']
+#files = ['/Users/gfranco/class_DCDM2/output/test3_background.dat']
+files = ['/home/guillermo/class_DCDM2/output/test3_background.dat']
 data = []
 for data_file in files:
     data.append(np.loadtxt(data_file))
