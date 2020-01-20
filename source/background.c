@@ -339,6 +339,9 @@ int background_functions(
     rho_r += pvecback[pba->index_bg_rho_dr];
   }
 
+//class_test(rho_tot <= 0.,
+//             pba->error_message,
+//             "rho_tot = %e instead of strictly positive",rho_tot);
 
   /* GFA: dcdm2, dr2 and wdm2  */
 if (pba->has_dcdm2==_TRUE_){
@@ -359,8 +362,11 @@ if (pba->has_dcdm2==_TRUE_){
   p_tot += pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
   rho_r += 3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
   rho_m += pvecback[pba->index_bg_rho_wdm2]-3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-}
+  if (pvecback[pba->index_bg_rho_wdm2] <0.0) { /* GFA, this shouldn't happen  */
+    printf("rho_wdm2=%e \n",pvecback_B[3]);
+  }
 
+}
 
 
   /* Scalar field */
@@ -484,6 +490,7 @@ if (pba->has_dcdm2==_TRUE_){
 
   /** - compute critical density */
   rho_crit = rho_tot-pba->K/a/a;
+//  printf("h=%f\n",pba->h);
   class_test(rho_crit <= 0.,
              pba->error_message,
              "rho_crit = %e instead of strictly positive",rho_crit);
@@ -1057,6 +1064,7 @@ if ( (pba->Gamma_dcdm2 != 0.) || (pba->Omega0_dcdm2dr2wdm2 != 0.) ) {
   class_define_index(pba->index_bi_rho_dr2,pba->has_dcdm2,index_bi,1);
   /* GFA: energy density in WDM2 */
   class_define_index(pba->index_bi_rho_wdm2,pba->has_dcdm2,index_bi,1);
+
   /* GFA: equation of state parameter in WDM2  */
   class_define_index(pba->index_bi_w_wdm2,pba->has_dcdm2,index_bi,1);
 
@@ -1748,6 +1756,7 @@ int background_solve(
     time_past=pvecback_integration[pba->index_bi_time];
 
     /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_today; need not be exact, difference corrected later) */
+
     class_call(background_functions(pba,pvecback_integration, pba->short_info, pvecback),
                pba->error_message,
                pba->error_message);
@@ -1794,6 +1803,7 @@ int background_solve(
      pvecback_integration[pba->index_bi_w_wdm2]=0.0;
      is_a_less_a_ini=_TRUE_;
      }  else {
+    //  printf("Here rho_wdm2=%e and a=%e\n",pvecback_integration[3],pvecback_integration[pba->index_bi_a]);
        if (is_a_less_a_ini==_TRUE_) { /* GFA: Maybe this method for determining t_ini could be improved  */
          t_ini=time_past;
          // printf("-> t_ini = %f Gyr \n",t_ini/_Gyr_over_Mpc_);
@@ -1806,15 +1816,17 @@ int background_solve(
       //integral_wdm2 += step_a*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/(a_past*H_past); /* GFA: integral in a */
       integral_wdm2 += ppr->back_integration_stepsize*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/H_past;  /* GFA: integral in tau  */
 
+
      if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method */
        pvecback_integration[pba->index_bi_rho_wdm2]=
        pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*integral_wdm2;
      } else {
        pvecback_integration[pba->index_bi_rho_wdm2]=
        pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*integral_wdm2;
+      // printf("Here rho_wdm2=%e\n",pvecback_integration[pba->index_bi_rho_wdm2]);
      }
 
-     gamt=pba->Gamma_dcdm2*(pvecback_integration[pba->index_bi_time]-t_ini);
+  //   gamt=pba->Gamma_dcdm2*(pvecback_integration[pba->index_bi_time]-t_ini);
      /* GFA: compute iteratively integrals needed for the equation of state parameter in wdm2  */
 //     if (gamt <1.e-2) {
 //       factor_w_wdm2=(1./3.)*pow(pba->varepsilon,2)/(pvecback_integration[pba->index_bi_time]-t_ini);
@@ -1830,6 +1842,7 @@ int background_solve(
      /* GFA: It is not computing w_wdm2 properly (not similar at all to Fig.2 of 1410.0683v2) --> FIX THIS  */
     }
    }
+
 
   }
 

@@ -726,9 +726,8 @@ int input_read_parameters(
   if (flag2 == _TRUE_) {
     pba->H0 = param2 *  1.e5 / _c_;
     pba->h = param2;
-    printf("h was read from some file structure, h=%f\n",param2);
+    // printf("h was read from some file structure, h=%f\n",param2);
   }
-//  printf("h= %e\n",pba->h);
 
   /** - Omega_0_g (photons) and T_cmb */
   class_call(parser_read_double(pfc,"T_cmb",&param1,&flag1,errmsg),
@@ -2979,6 +2978,7 @@ if (input_verbose > 0) {
   printf(" -> since you want to use Halofit with a non-zero wa_fld, calling background module to\n");
   printf("    extract the effective w(tau), Omega_m(tau) parameters required by the Pk_equal method\n");
 }
+
 class_call(input_prepare_pk_eq(ppr,pba,pth,pnl,input_verbose,errmsg),
            errmsg,
            errmsg);
@@ -3609,6 +3609,7 @@ class_call(background_init(&pr,&ba),
            ba.error_message,
            errmsg
            );
+//printf("Omega_wdm2=%e\n", ba.Omega0_wdm2);
 }
 
 if (pfzw->required_computation_stage >= cs_thermodynamics){
@@ -3736,6 +3737,7 @@ case omega_ini_dcdm2:
   break;
 case sigma8:
   output[i] = nl.sigma8[nl.index_pk_m]-pfzw->target_value[i];
+  printf("computed sigma8=%e \n",nl.sigma8[nl.index_pk_m]);
   break;
 }
 }
@@ -4027,6 +4029,7 @@ for (iter2=1; iter2 <= 3; iter2++) {
     x2 = x1-dx;
   }
   else {
+    //printf("get here\n");
     class_stop(errmsg,errmsg);
   }
 }
