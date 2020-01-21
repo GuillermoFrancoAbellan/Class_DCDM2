@@ -708,7 +708,7 @@ int input_read_parameters(
   class_read_double("a_today",pba->a_today);
 
   /** alpha parameter for the simple modification of gravity */
-  /* class_read_double("alpha",ppt->alpha);
+  // class_read_double("alpha",ppt->alpha);
   /** - h (dimensionless) and [\f$ H_0/c\f$] in \f$ Mpc^{-1} = h / 2997.9... = h * 10^5 / c \f$ */
   class_call(parser_read_double(pfc,"H0",&param1,&flag1,errmsg),
              errmsg,
@@ -726,7 +726,7 @@ int input_read_parameters(
   if (flag2 == _TRUE_) {
     pba->H0 = param2 *  1.e5 / _c_;
     pba->h = param2;
-    // printf("h was read from some file structure, h=%f\n",param2);
+  //  printf("H0 was read from some file structure, H0=%e Mpc^-1\n",pba->H0 );
   }
 
   /** - Omega_0_g (photons) and T_cmb */
@@ -2573,7 +2573,7 @@ class_call(parser_read_string(pfc,
            errmsg,
            errmsg);
 
-if ((flag1 == _TRUE_)) {
+if (flag1 == _TRUE_) {
   if ((strstr(string1,"analytic") != NULL)){
     ptr->has_nz_analytic = _TRUE_;
   }
@@ -2591,7 +2591,7 @@ class_call(parser_read_string(pfc,
            errmsg,
            errmsg);
 
-if ((flag1 == _TRUE_)) {
+if (flag1 == _TRUE_) {
   if ((strstr(string1,"analytic") != NULL)){
     ptr->has_nz_evo_analytic = _TRUE_;
   }
@@ -3604,12 +3604,11 @@ ba.background_verbose = 0;
 //if (return_func!=_SUCCESS_){
 //    printf("background_init failed");
 //}
-
 class_call(background_init(&pr,&ba),
            ba.error_message,
            errmsg
            );
-//printf("Omega_wdm2=%e\n", ba.Omega0_wdm2);
+
 }
 
 if (pfzw->required_computation_stage >= cs_thermodynamics){
@@ -4018,7 +4017,7 @@ x2 = x1 - dx;
 for (iter2=1; iter2 <= 3; iter2++) {
   return_function = input_fzerofun_1d(x2,pfzw,&f2,errmsg);
   (*fevals)++;
-  printf("x2= %g, f2= %g\n",x2,f2);
+  printf("x2= %e, f2= %e\n",x2,f2);
   //fprintf(stderr,"iter2=%d\n",iter2);
 
   if (return_function ==_SUCCESS_) {
