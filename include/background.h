@@ -282,7 +282,9 @@ struct background
   int index_bi_rho_dcdm2; /**< GFA: {B} dcdm2 density*/
   int index_bi_rho_dr2;   /**< GFA: {B} dr2 density*/
   int index_bi_rho_wdm2;  /**< GFA: {B} wdm2 density*/
+  double rho_ini_wdm2;  /**< GFA: {B} initial value of  wdm2 density*/
   int index_bi_w_wdm2; /**< GFA: {B} equation of state parameter for wdm2   */
+  double w_ini_wdm2;  /**< GFA: {B} initial value of the  EoS parameter for wdm2   */
   int index_bi_rho_fld; /**< {B} fluid density */
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */

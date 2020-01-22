@@ -935,8 +935,6 @@ int input_read_parameters(
 
   if (pba->Omega0_dcdm2dr2wdm2 >0)   {
    Omega_tot += pba->Omega0_dcdm2dr2wdm2;
-   printf(" Omega_dcdmdrwdm=%e \n",pba->Omega0_dcdm2dr2wdm2);
-
    /** - Read Omega_ini_dcdm2 or omega_ini_dcdm2 */
    class_call(parser_read_double(pfc,"Omega_ini_dcdm2",&param1,&flag1,errmsg),
               errmsg,
@@ -3996,7 +3994,7 @@ int return_function;
 /** - Fisrt we do our guess */
 class_call(input_get_guess(&x1, &dxdy, pfzw, errmsg),
          errmsg, errmsg);
-printf("x1= %g\n",x1);
+//printf("x1= %g\n",x1);
 
 class_call(input_fzerofun_1d(x1,
                            pfzw,
@@ -4005,7 +4003,7 @@ class_call(input_fzerofun_1d(x1,
          errmsg, errmsg);
 
 (*fevals)++;
-printf("x1= %g, f1= %g\n",x1,f1);
+//printf("x1= %g, f1= %g\n",x1,f1);
 
 dx = 1.5*f1*dxdy;
 
@@ -4017,7 +4015,7 @@ x2 = x1 - dx;
 for (iter2=1; iter2 <= 3; iter2++) {
   return_function = input_fzerofun_1d(x2,pfzw,&f2,errmsg);
   (*fevals)++;
-  printf("x2= %e, f2= %e\n",x2,f2);
+//  printf("x2= %e, f2= %e\n",x2,f2);
   //fprintf(stderr,"iter2=%d\n",iter2);
 
   if (return_function ==_SUCCESS_) {
