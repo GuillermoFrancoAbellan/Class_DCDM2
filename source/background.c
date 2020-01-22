@@ -311,7 +311,6 @@ int background_functions(
   rho_tot += pvecback[pba->index_bg_rho_b];
   p_tot += 0;
   rho_m += pvecback[pba->index_bg_rho_b];
-
   /* cdm */
   if (pba->has_cdm == _TRUE_) {
     pvecback[pba->index_bg_rho_cdm] = pba->Omega0_cdm * pow(pba->H0,2) / pow(a_rel,3);
@@ -339,7 +338,6 @@ int background_functions(
     rho_r += pvecback[pba->index_bg_rho_dr];
   }
 
-
   /* GFA: dcdm2, dr2 and wdm2  */
 if (pba->has_dcdm2==_TRUE_){
   /* GFA: pass value of rho_dcdm2 to output*/
@@ -347,18 +345,27 @@ if (pba->has_dcdm2==_TRUE_){
   rho_tot += pvecback[pba->index_bg_rho_dcdm2];
   p_tot += 0.;
   rho_m += pvecback[pba->index_bg_rho_dcdm2];
+  class_test(pvecback[pba->index_bg_rho_dcdm2] < 0., /* GFA, this shouldn't happen  */
+               pba->error_message,
+               "At a=%e, rho_dcdm2 = %e instead of strictly positive",a,pvecback[pba->index_bg_rho_dcdm2]);
   /* GFA: pass value of rho_dr2 to output*/
   pvecback[pba->index_bg_rho_dr2]=pvecback_B[pba->index_bi_rho_dr2];
   rho_tot += pvecback[pba->index_bg_rho_dr2];
   p_tot += (1./3.)*pvecback[pba->index_bg_rho_dr2];
   rho_r += pvecback[pba->index_bg_rho_dr2];
+  class_test(pvecback[pba->index_bg_rho_dr2] < 0., /* GFA, this shouldn't happen  */
+               pba->error_message,
+               "At a=%e, rho_dr2 = %e instead of strictly positive",a, pvecback_B[pba->index_bi_rho_dr2]);
   /* GFA: pass value of rho_wdm2 to output*/
   pvecback[pba->index_bg_rho_wdm2]=pvecback_B[pba->index_bi_rho_wdm2];
   rho_tot += pvecback[pba->index_bg_rho_wdm2];
   pvecback[pba->index_bg_w_wdm2]=pvecback_B[pba->index_bi_w_wdm2];
   p_tot += pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-  rho_m += pvecback[pba->index_bg_rho_wdm2]; /* GFA: Since rho_wdm2 is a warm particle, there should also be a part going into radiation
-                                             /* How do I split these contributions?   */
+  rho_r += 3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
+  rho_m += pvecback[pba->index_bg_rho_wdm2]-3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
+  class_test(pvecback[pba->index_bg_rho_wdm2] < 0., /* GFA, this shouldn't happen  */
+               pba->error_message,
+               "At a=%e, rho_wdm2 = %e instead of strictly positive",a, pvecback[pba->index_bg_rho_wdm2]);
 }
 
 
@@ -484,6 +491,7 @@ if (pba->has_dcdm2==_TRUE_){
 
   /** - compute critical density */
   rho_crit = rho_tot-pba->K/a/a;
+//  printf("h=%f\n",pba->h);
   class_test(rho_crit <= 0.,
              pba->error_message,
              "rho_crit = %e instead of strictly positive",rho_crit);
@@ -1057,6 +1065,7 @@ if ( (pba->Gamma_dcdm2 != 0.) || (pba->Omega0_dcdm2dr2wdm2 != 0.) ) {
   class_define_index(pba->index_bi_rho_dr2,pba->has_dcdm2,index_bi,1);
   /* GFA: energy density in WDM2 */
   class_define_index(pba->index_bi_rho_wdm2,pba->has_dcdm2,index_bi,1);
+
   /* GFA: equation of state parameter in WDM2  */
   class_define_index(pba->index_bi_w_wdm2,pba->has_dcdm2,index_bi,1);
 
@@ -1677,25 +1686,25 @@ int background_solve(
   /* comoving radius coordinate in Mpc (equal to conformal distance in flat case) */
   double comoving_radius=0.;
   /* GFA: proper time at the beginning of the decay */
-  double t_ini;
+  double t_ini=0.;
   /* GFA: auxiliary flag needed to determine t_ini   */
-  short is_a_less_a_ini;
+  short is_a_less_a_ini=_TRUE_;
   /* GFA: stepsize in scale factor for the integrals appearing in dr2 and wdm2 computation   */
-  double step_a;
+  double step_a=0.;
   /* GFA: auxiliary variable: for storing previous value of the scale factor (used in dr2 and wdm2 computation) */
-  double a_past;
+  double a_past=0.;
  /* GFA: auxiliary variable: for storing previous value of proper time (used in dr2 and wdm2 computation) */
-  double time_past;
+  double time_past=0.;
  /* GFA: auxiliary variable: for storing previous value of Hubble parameter (used in dr2 and wdm2 computation)   */
-  double H_past;
+  double H_past=0.;
   /* GFA: auxiliary variable, integral needed to compute wdm2 density  */
-  double integral_wdm2;
+  double integral_wdm2=0.;
   /* GFA: auxiliary variable, square root appearing in the integrand of the expression for wdm2*/
-  double sqrt_integrand;
+  double sqrt_integrand=0.;
   /* GFA: auxiliary variable, integral needed to compute the equation of state parameter in wdm2 */
-  double integral_w_wdm2;
+  double integral_w_wdm2=0.;
   /* GFA: auxiliary variable, prefactor appearing in the expression for the equation of state parameter in wdm2     */
-  double factor_w_wdm2;
+  double factor_w_wdm2=0.;
 
 
 
@@ -1720,6 +1729,18 @@ int background_solve(
              pba->error_message,
              pba->error_message);
 
+  class_test(pvecback_integration[pba->index_bi_rho_dcdm2] < 0., /* GFA, this shouldn't happen  */
+             pba->error_message,
+            "At a=%e,rho_dcdm2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_a],pvecback_integration[pba->index_bi_rho_dcdm2]);
+
+  class_test(pvecback_integration[pba->index_bi_rho_dr2] < 0., /* GFA, this shouldn't happen  */
+             pba->error_message,
+             "At a=%e,rho_dr2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_a],pvecback[pba->index_bi_rho_dr2]);
+
+  class_test(pvecback_integration[pba->index_bi_rho_wdm2] < 0., /* GFA, this shouldn't happen  */
+             pba->error_message,
+            "At a=%e,rho_wdm2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_a],pvecback_integration[pba->index_bi_rho_wdm2]);
+
   /* here tau_end is in fact the initial time (in the next loop
      tau_start = tau_end) */
   tau_end=pvecback_integration[pba->index_bi_tau];
@@ -1732,10 +1753,6 @@ int background_solve(
   /* initialize the counter for the number of steps */
   pba->bt_size=0;
 
-  /* GFA: initialize the integrals for the wdm2 computation*/
-  integral_wdm2=0.0;
-  integral_w_wdm2=0.0;
-
   /** - loop over integration steps: call background_functions(), find step size, save data in growTable with gt_add(), perform one step with generic_integrator(), store new value of tau */
 
   while (pvecback_integration[pba->index_bi_a] < pba->a_today) {
@@ -1746,7 +1763,16 @@ int background_solve(
     a_past=pvecback_integration[pba->index_bi_a];
     time_past=pvecback_integration[pba->index_bi_time];
 
+    class_test(pvecback_integration[pba->index_bi_rho_dcdm2] < 0., /* GFA, this shouldn't happen  */
+                 pba->error_message,
+                 "At a=%e,rho_dcdm2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_a],pvecback_integration[pba->index_bi_rho_dcdm2]);
+
+    class_test(pvecback_integration[pba->index_bi_rho_dr2] < 0., /* GFA, this shouldn't happen  */
+                  pba->error_message,
+                 "At a=%e,rho_dr2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_a],pvecback[pba->index_bi_rho_dr2]);
+
     /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_today; need not be exact, difference corrected later) */
+
     class_call(background_functions(pba,pvecback_integration, pba->short_info, pvecback),
                pba->error_message,
                pba->error_message);
@@ -1785,7 +1811,6 @@ int background_solve(
     /* -> store value of tau */
     pvecback_integration[pba->index_bi_tau]=tau_end;
 
-
     if (pba->has_dcdm2==_TRUE_){
     /* GFA: compute wdm2 density  */
     if (pvecback_integration[pba->index_bi_a]<pba->a_ini_dcdm2) {
@@ -1793,34 +1818,42 @@ int background_solve(
      pvecback_integration[pba->index_bi_w_wdm2]=0.0;
      is_a_less_a_ini=_TRUE_;
      }  else {
+    //  printf("Here rho_wdm2=%e and a=%e\n",pvecback_integration[3],pvecback_integration[pba->index_bi_a]);
        if (is_a_less_a_ini==_TRUE_) { /* GFA: Maybe this method for determining t_ini could be improved  */
          t_ini=time_past;
-         // printf("-> t_ini = %f Gyr \n",t_ini/_Gyr_over_Mpc_);
+        //  printf("-> t_ini = %f Gyr \n",t_ini/_Gyr_over_Mpc_);
          is_a_less_a_ini=_FALSE_;
         }
       step_a=pvecback_integration[pba->index_bi_a]-a_past; /* GFA: Note that the value of the step in a keeps changing each time, as opposed to the step in tau */
       // printf("step_a= %e \n",step_a);
-      /* GFA: compute iteratively integrals needed for the wdm2 computation (simple trapezoidal rule)*/
-      sqrt_integrand=sqrt((pow(pba->varepsilon,2)/(1.-2.*pba->varepsilon))*pow(a_past/pvecback_integration[pba->index_bi_a],2)+1.);
-      //integral_wdm2 += step_a*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/(a_past*H_past); /* GFA: integral in a */
-      integral_wdm2 += ppr->back_integration_stepsize *sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/H_past;  /* GFA: integral in tau  */
+      /* GFA: compute iteratively integrals needed for the wdm2 computation (simple rectangle rule)*/
+      sqrt_integrand=sqrt(pow(pba->varepsilon,2.)*pow(a_past,2.)+(1.-2.*pba->varepsilon)*pow(pvecback_integration[pba->index_bi_a],2.));
+      integral_wdm2 += step_a*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/(a_past*H_past); /* GFA: integral in a */
+    //  integral_wdm2 += ppr->back_integration_stepsize*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/H_past;  /* GFA: integral in tau  */
 
      if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method */
        pvecback_integration[pba->index_bi_rho_wdm2]=
-       pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*integral_wdm2;
+       pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*integral_wdm2;
      } else {
        pvecback_integration[pba->index_bi_rho_wdm2]=
-       pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*integral_wdm2;
+       pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*integral_wdm2;
+       // H at the end of calculation should be of the order 10^-4 Mpc^-1
+      //  printf("H=%e Mpc^-1 and z=%e \n",pvecback[pba->index_bg_H],1./pvecback_integration[pba->index_bi_a]-1.);
      }
 
+     class_test(pvecback_integration[pba->index_bi_rho_wdm2] < 0., /* GFA, this shouldn't happen  */
+                  pba->error_message,
+                  "rho_wdm2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_rho_wdm2] );
+
      /* GFA: compute iteratively integrals needed for the equation of state parameter in wdm2  */
-     factor_w_wdm2=(1./3.)*pba->Gamma_dcdm2*(pow(pba->varepsilon,2)/pow(1.-pba->varepsilon,2))/(exp(-pba->Gamma_dcdm2*t_ini)-exp(-pba->Gamma_dcdm2*pvecback_integration[pba->index_bi_time]));
-    // integral_w_wdm2+=step_a*exp(-pba->Gamma_dcdm2*time_past)/(a_past*H_past*pow(1.-pba->varepsilon,-2)*(pow(pvecback_integration[pba->index_bi_a]/a_past,2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2))); /* GFA: integral in a  */
-     integral_w_wdm2+=ppr->back_integration_stepsize*exp(-pba->Gamma_dcdm2*time_past)/(H_past*pow(1.-pba->varepsilon,-2)*(pow(pvecback_integration[pba->index_bi_a]/a_past,2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2))); /* GFA: integral in tau */
-     pvecback_integration[pba->index_bi_w_wdm2]=factor_w_wdm2*integral_w_wdm2;
+       factor_w_wdm2=(1./3.)*pba->Gamma_dcdm2*pow(pba->varepsilon,2)/(1.-exp(-pba->Gamma_dcdm2*(pvecback_integration[pba->index_bi_time]-t_ini)));
+       integral_w_wdm2+=step_a*a_past*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/(H_past*(pow(pvecback_integration[pba->index_bi_a],2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2)*pow(a_past,2))); /* GFA: integral in a  */
+       //integral_w_wdm2+=ppr->back_integration_stepsize*pow(a_past,2)*exp(-pba->Gamma_dcdm2*(pvecback_integration[pba->index_bi_time]-t_ini))/(H_past*(pow(pvecback_integration[pba->index_bi_a],2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2)*pow(a_past,2))); /* GFA: integral in tau */
+       pvecback_integration[pba->index_bi_w_wdm2]=factor_w_wdm2*integral_w_wdm2;
      /* GFA: It is not computing w_wdm2 properly (not similar at all to Fig.2 of 1410.0683v2) --> FIX THIS  */
     }
    }
+
 
   }
 
@@ -2155,6 +2188,7 @@ int background_initial_conditions(
 
   /* GFA  */
   if (pba->has_dcdm2==_TRUE_) {
+
    if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method  */
        pvecback_integration[pba->index_bi_rho_dcdm2]=
        pba->Omega_ini_dcdm2*pow(pba->H0,2)*pow(pba->a_today/a,3);
@@ -2174,18 +2208,21 @@ int background_initial_conditions(
    }
 
     /* GFA: If I set 0.0 for dr2, it gives an error with the generic_integrator (stepsize underflow)  */
-    // pvecback_integration[pba->index_bi_rho_dr2]=1.e-15;
+     pvecback_integration[pba->index_bi_rho_dr2]=1.e-15;
 
-    if (pba->a_ini_dcdm2<aeq) { /* GFA: decay starts in rad. era  */
-    pvecback_integration[pba->index_bi_rho_dr2]=f2*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
-    } else { /* GFA: decay starts in mat. era  */
-    pvecback_integration[pba->index_bi_rho_dr2]=f3*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
-    }
+  //  if (pba->a_ini_dcdm2<aeq) { /* GFA: decay starts in rad. era  */
+  //  pvecback_integration[pba->index_bi_rho_dr2]=f2*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
+  //  } else { /* GFA: decay starts in mat. era  */
+  //  pvecback_integration[pba->index_bi_rho_dr2]=f3*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
+  //  }
     /* Note that with this initial condition, the profile of rho_dr won't show a peak, it will be decreasing all the time */
 
 
     pvecback_integration[pba->index_bi_rho_wdm2]=0.0;
     pvecback_integration[pba->index_bi_w_wdm2]=0.0;
+    /* Following initial condition is only valid for decay starting in radiation era (and for times much smaller than lifetime )  */
+  //  pvecback_integration[pba->index_bi_w_wdm2]=(1./3.)*(1.+(1.-2.*pba->varepsilon)*log((1.-2.*pba->varepsilon)/pow(1.-pba->varepsilon,2))/pow(pba->varepsilon,2));
+
   }
 
 
@@ -2590,6 +2627,14 @@ int background_derivs(
        pba->varepsilon*y[pba->index_bi_a]*pba->Gamma_dcdm2*y[pba->index_bi_rho_dcdm2];
     }
   }
+  class_test(pvecback[pba->index_bg_rho_dcdm2] < 0., /* GFA, this shouldn't happen  */
+               pba->error_message,
+               "rho_dcdm2 = %e instead of strictly positive",pvecback[pba->index_bg_rho_dcdm2]);
+
+  class_test(pvecback[pba->index_bg_rho_dr2] < 0., /* GFA, this shouldn't happen  */
+               pba->error_message,
+               "rho_dr2 = %e instead of strictly positive",pvecback[pba->index_bg_rho_dr2]);
+
 
   if (pba->has_fld == _TRUE_) {
     /** - Compute fld density \f$ \rho' = -3aH (1+w_{fld}(a)) \rho \f$ */

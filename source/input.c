@@ -331,6 +331,7 @@ int input_init(
    * Here we start shooting (see above for explanation of shooting)
    *
    *  */
+  // printf("unknown_parameters_size=%d \n",unknown_parameters_size);
   if (unknown_parameters_size > 0) {
 
     /* Create file content structure with additional entries */
@@ -707,7 +708,7 @@ int input_read_parameters(
   class_read_double("a_today",pba->a_today);
 
   /** alpha parameter for the simple modification of gravity */
-  /* class_read_double("alpha",ppt->alpha);
+  // class_read_double("alpha",ppt->alpha);
   /** - h (dimensionless) and [\f$ H_0/c\f$] in \f$ Mpc^{-1} = h / 2997.9... = h * 10^5 / c \f$ */
   class_call(parser_read_double(pfc,"H0",&param1,&flag1,errmsg),
              errmsg,
@@ -725,6 +726,7 @@ int input_read_parameters(
   if (flag2 == _TRUE_) {
     pba->H0 = param2 *  1.e5 / _c_;
     pba->h = param2;
+  //  printf("H0 was read from some file structure, H0=%e Mpc^-1\n",pba->H0 );
   }
 
   /** - Omega_0_g (photons) and T_cmb */
@@ -2571,7 +2573,7 @@ class_call(parser_read_string(pfc,
            errmsg,
            errmsg);
 
-if ((flag1 == _TRUE_)) {
+if (flag1 == _TRUE_) {
   if ((strstr(string1,"analytic") != NULL)){
     ptr->has_nz_analytic = _TRUE_;
   }
@@ -2589,7 +2591,7 @@ class_call(parser_read_string(pfc,
            errmsg,
            errmsg);
 
-if ((flag1 == _TRUE_)) {
+if (flag1 == _TRUE_) {
   if ((strstr(string1,"analytic") != NULL)){
     ptr->has_nz_evo_analytic = _TRUE_;
   }
@@ -2976,6 +2978,7 @@ if (input_verbose > 0) {
   printf(" -> since you want to use Halofit with a non-zero wa_fld, calling background module to\n");
   printf("    extract the effective w(tau), Omega_m(tau) parameters required by the Pk_equal method\n");
 }
+
 class_call(input_prepare_pk_eq(ppr,pba,pth,pnl,input_verbose,errmsg),
            errmsg,
            errmsg);
@@ -3517,6 +3520,7 @@ int input_verbose;
 int flag;
 int param;
 short compute_sigma8 = _FALSE_;
+int return_func; /* GFA */
 
 pfzw = (struct fzerofun_workspace *) voidpfzw;
 /** - Read input parameters */
@@ -3524,6 +3528,7 @@ for (i=0; i < unknown_parameters_size; i++) {
 sprintf(pfzw->fc.value[pfzw->unknown_parameters_index[i]],
         "%e",unknown_parameter[i]);
 }
+
 
 class_call(input_read_precisions(&(pfzw->fc),
                                &pr,
@@ -3594,10 +3599,16 @@ if (pfzw->required_computation_stage >= cs_background){
 if (input_verbose>2)
   printf("Stage 1: background\n");
 ba.background_verbose = 0;
+//ba.background_verbose = 1;
+//return_func=background_init(&pr,&ba);
+//if (return_func!=_SUCCESS_){
+//    printf("background_init failed");
+//}
 class_call(background_init(&pr,&ba),
            ba.error_message,
            errmsg
            );
+
 }
 
 if (pfzw->required_computation_stage >= cs_thermodynamics){
@@ -3672,6 +3683,7 @@ for (i=0; i < pfzw->target_size; i++) {
 switch (pfzw->target_name[i]) {
 case theta_s:
   output[i] = 100.*th.rs_rec/th.ra_rec-pfzw->target_value[i];
+  printf("computed 100*theta_s=%e \n",100.*th.rs_rec/th.ra_rec);
   break;
 case Omega_dcdmdr:
   rho_dcdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm];
@@ -3724,6 +3736,7 @@ case omega_ini_dcdm2:
   break;
 case sigma8:
   output[i] = nl.sigma8[nl.index_pk_m]-pfzw->target_value[i];
+  printf("computed sigma8=%e \n",nl.sigma8[nl.index_pk_m]);
   break;
 }
 }
@@ -3983,7 +3996,7 @@ int return_function;
 /** - Fisrt we do our guess */
 class_call(input_get_guess(&x1, &dxdy, pfzw, errmsg),
          errmsg, errmsg);
-//      printf("x1= %g\n",x1);
+printf("x1= %g\n",x1);
 
 class_call(input_fzerofun_1d(x1,
                            pfzw,
@@ -3992,7 +4005,7 @@ class_call(input_fzerofun_1d(x1,
          errmsg, errmsg);
 
 (*fevals)++;
-//printf("x1= %g, f1= %g\n",x1,f1);
+printf("x1= %g, f1= %g\n",x1,f1);
 
 dx = 1.5*f1*dxdy;
 
@@ -4004,7 +4017,7 @@ x2 = x1 - dx;
 for (iter2=1; iter2 <= 3; iter2++) {
   return_function = input_fzerofun_1d(x2,pfzw,&f2,errmsg);
   (*fevals)++;
-  //printf("x2= %g, f2= %g\n",x2,f2);
+  printf("x2= %e, f2= %e\n",x2,f2);
   //fprintf(stderr,"iter2=%d\n",iter2);
 
   if (return_function ==_SUCCESS_) {
@@ -4015,7 +4028,7 @@ for (iter2=1; iter2 <= 3; iter2++) {
     x2 = x1-dx;
   }
   else {
-    //fprintf(stderr,"get here\n");
+    //printf("get here\n");
     class_stop(errmsg,errmsg);
   }
 }
@@ -4072,9 +4085,13 @@ class_read_int("input_verbose",input_verbose);
 switch (target_name){
 case Omega_dcdmdr:
 case omega_dcdmdr:
+case Omega_dcdmdrwdm: /* GFA */
+case omega_dcdmdrwdm: /* GFA */
 case Omega_scf:
 case Omega_ini_dcdm:
 case omega_ini_dcdm:
+case Omega_ini_dcdm2: /* GFA */
+case omega_ini_dcdm2: /* GFA */
 /* Check that Omega's or omega's are nonzero: */
 if (target_value == 0.)
   *aux_flag = _FALSE_;

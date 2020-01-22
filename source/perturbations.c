@@ -5718,10 +5718,9 @@ int perturb_einstein(
       /* first equation involving total density fluctuation */
       ppw->pvecmetric[ppw->index_mt_h_prime] =
         ( k2 * s2_squared * y[ppw->pv->index_pt_eta] + 1.5 * a2 * ppw->delta_rho)/(0.5*a_prime_over_a);  /* h' */
-        /* first equation involving total density fluctuation */
-      /*  ppw->pvecmetric[ppw->index_mt_h_prime] =
-          ( k2 * s2_squared * y[ppw->pv->index_pt_eta] + 1.5 *(1.+ppt->alpha*pow(a,3.))* a2 * ppw->delta_rho)/(0.5*a_prime_over_a);  /* h' */
-          
+      //  ppw->pvecmetric[ppw->index_mt_h_prime] =
+      //    ( k2 * s2_squared * y[ppw->pv->index_pt_eta] + 1.5 *(1.+ppt->alpha*pow(a,3.))* a2 * ppw->delta_rho)/(0.5*a_prime_over_a);
+
       /* eventually, infer radiation streaming approximation for
          gamma and ur (this is exactly the right place to do it
          because the result depends on h_prime) */
