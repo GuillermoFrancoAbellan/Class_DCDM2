@@ -3704,13 +3704,15 @@ case omega_dcdmdr:
  case Omega_dcdmdrwdm:  /* GFA*/
   rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
   rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
-  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+  // rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+  rho_wdm2_today = 0;
   output[i] = (rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)-pfzw->target_value[i];
   break;
  case omega_dcdmdrwdm: /* GFA*/
   rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
   rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
-  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+  // rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+  rho_wdm2_today = 0;
   output[i] = (rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;;
   break;
 case Omega_scf:
@@ -3731,7 +3733,8 @@ case Omega_ini_dcdm2: /*GFA */
 case omega_ini_dcdm2:
   rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
   rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
-  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+  // rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
+  rho_wdm2_today = 0;
   output[i]=-(rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)+ba.Omega0_dcdm2dr2wdm2;
   break;
 case sigma8:
@@ -3943,7 +3946,7 @@ case Omega_ini_dcdm:
   if (gamma > 100)
     dxdy[index_guess] *= gamma/100;
 
-  //printf("x = Omega_ini_guess = %g, dxdy = %g\n",*xguess,*dxdy);
+  printf("x = Omega_ini_guess = %g, dxdy = %g\n",*xguess,*dxdy);
   break;
 case omega_ini_dcdm2:
   Omega0_dcdm2dr2wdm2 = 1./(ba.h*ba.h);
@@ -3962,6 +3965,8 @@ case Omega_ini_dcdm2:
   dxdy[index_guess] = a_decay;
   if (gamma > 100)
     dxdy[index_guess] *= gamma/100;
+
+  printf("x = Omega_ini_guess = %g, dxdy = %g\n",*xguess,*dxdy);
   break;
 
 case sigma8:
