@@ -353,9 +353,9 @@ if (pba->has_dcdm2==_TRUE_){
   rho_tot += pvecback[pba->index_bg_rho_dr2];
   p_tot += (1./3.)*pvecback[pba->index_bg_rho_dr2];
   rho_r += pvecback[pba->index_bg_rho_dr2];
-  class_test(pvecback[pba->index_bg_rho_dr2] < 0., /* GFA, this shouldn't happen--> SEEMS TO BE GIVING AN ERROR ALWAYS AFTER a_ini_dcdm2  */
+  class_test(pvecback[pba->index_bg_rho_dr2] < 0., /* GFA, this shouldn't happen  */
                pba->error_message,
-               "At a=%e, rho_dr2 = %e instead of strictly positive",a, pvecback[pba->index_bg_rho_dr2]);
+               "At a=%e, rho_dr2 = %e instead of strictly positive",a, pvecback_B[pba->index_bi_rho_dr2]);
   /* GFA: pass value of rho_wdm2 to output*/
   pvecback[pba->index_bg_rho_wdm2]=pvecback_B[pba->index_bi_rho_wdm2];
   rho_tot += pvecback[pba->index_bg_rho_wdm2];
@@ -1729,6 +1729,18 @@ int background_solve(
              pba->error_message,
              pba->error_message);
 
+  class_test(pvecback_integration[pba->index_bi_rho_dcdm2] < 0., /* GFA, this shouldn't happen  */
+             pba->error_message,
+            "At a=%e,rho_dcdm2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_a],pvecback_integration[pba->index_bi_rho_dcdm2]);
+
+  class_test(pvecback_integration[pba->index_bi_rho_dr2] < 0., /* GFA, this shouldn't happen  */
+             pba->error_message,
+             "At a=%e,rho_dr2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_a],pvecback[pba->index_bi_rho_dr2]);
+
+  class_test(pvecback_integration[pba->index_bi_rho_wdm2] < 0., /* GFA, this shouldn't happen  */
+             pba->error_message,
+            "At a=%e,rho_wdm2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_a],pvecback_integration[pba->index_bi_rho_wdm2]);
+
   /* here tau_end is in fact the initial time (in the next loop
      tau_start = tau_end) */
   tau_end=pvecback_integration[pba->index_bi_tau];
@@ -1750,6 +1762,14 @@ int background_solve(
     H_past=pvecback[pba->index_bg_H];
     a_past=pvecback_integration[pba->index_bi_a];
     time_past=pvecback_integration[pba->index_bi_time];
+
+    class_test(pvecback_integration[pba->index_bi_rho_dcdm2] < 0., /* GFA, this shouldn't happen  */
+                 pba->error_message,
+                 "At a=%e,rho_dcdm2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_a],pvecback_integration[pba->index_bi_rho_dcdm2]);
+
+    class_test(pvecback_integration[pba->index_bi_rho_dr2] < 0., /* GFA, this shouldn't happen  */
+                  pba->error_message,
+                 "At a=%e,rho_dr2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_a],pvecback[pba->index_bi_rho_dr2]);
 
     /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_today; need not be exact, difference corrected later) */
 
@@ -1790,14 +1810,6 @@ int background_solve(
 
     /* -> store value of tau */
     pvecback_integration[pba->index_bi_tau]=tau_end;
-
-    class_test(pvecback_integration[pba->index_bi_rho_dcdm2] < 0., /* GFA, this shouldn't happen  */
-                 pba->error_message,
-                 "rho_dcdm2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_rho_dcdm2]);
-
-    class_test(pvecback_integration[pba->index_bi_rho_wdm2] < 0., /* GFA, this shouldn't happen  */
-                              pba->error_message,
-                              "rho_wdm2 = %e instead of strictly positive",pvecback_integration[pba->index_bi_rho_wdm2]);
 
     if (pba->has_dcdm2==_TRUE_){
     /* GFA: compute wdm2 density  */
@@ -2176,6 +2188,7 @@ int background_initial_conditions(
 
   /* GFA  */
   if (pba->has_dcdm2==_TRUE_) {
+
    if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method  */
        pvecback_integration[pba->index_bi_rho_dcdm2]=
        pba->Omega_ini_dcdm2*pow(pba->H0,2)*pow(pba->a_today/a,3);
@@ -2209,6 +2222,7 @@ int background_initial_conditions(
     pvecback_integration[pba->index_bi_w_wdm2]=0.0;
     /* Following initial condition is only valid for decay starting in radiation era (and for times much smaller than lifetime )  */
   //  pvecback_integration[pba->index_bi_w_wdm2]=(1./3.)*(1.+(1.-2.*pba->varepsilon)*log((1.-2.*pba->varepsilon)/pow(1.-pba->varepsilon,2))/pow(pba->varepsilon,2));
+
   }
 
 
