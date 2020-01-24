@@ -356,9 +356,9 @@ if (pba->has_dcdm2==_TRUE_){
   pvecback[pba->index_bg_rho_wdm2]=pvecback_B[pba->index_bi_rho_wdm2];
   rho_tot += pvecback[pba->index_bg_rho_wdm2];
   pvecback[pba->index_bg_w_wdm2]=pvecback_B[pba->index_bi_w_wdm2];
-  p_tot += pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-  rho_r += 3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-  rho_m += pvecback[pba->index_bg_rho_wdm2]-3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
+//  p_tot += pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
+//  rho_r += 3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
+//  rho_m += pvecback[pba->index_bg_rho_wdm2]-3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
 }
 
 
@@ -2152,8 +2152,9 @@ int background_initial_conditions(
   /* GFA  */
   if (pba->has_dcdm2==_TRUE_) {
       fvarepsilon_rad=(pow(1.-eps,3.)-pow(1.-2.*eps,3./2.))/pow(eps,2.);
-      fvarepsilon_mat=(1.-2.*eps)*pow(c_eps,-3./2.)*fabs((7.01729392e-5)*c_eps+(1.62215202e-4)*pow(c_eps,2.)+(8.97047980e-5)*pow(c_eps,3.)+(-3.88922133e-6)*pow(c_eps,4.)); // I think this fitting formula can be improved
-    //  printf("fvarepsilon_mat=%e\n",fvarepsilon_mat);
+    //  fvarepsilon_mat=pow(1.-2.*eps,5./4.)*pow(eps,-3./2.)*fabs((7.01729392e-5)*c_eps+(1.62215202e-4)*pow(c_eps,2.)+(8.97047980e-5)*pow(c_eps,3.)+(-3.88922133e-6)*pow(c_eps,4.)); // I think this fitting formula can be improved
+      fvarepsilon_mat=0.5*pow(1.-2.*eps,5./4.)*sqrt(fabs(pow(eps,2.)*pow(1.-2.*eps,-5./2.)-pow(1.-2.*eps,-3./2.))); //This formula does already a better job, just comes from computing integral with trapezoidal rule
+      printf("fvarepsilon_mat=%e\n",fvarepsilon_mat); //maybe, multiply by fudge factor so that it agrees with 0.5*(2/5) for varepsilon near0.5
       /* compute initial value of integral for wdm2, when decay starts at radiation era (only valid for times much smaller than lifetime) */
       fwdm2_rad=(1./3.)*pow(pba->a_ini_dcdm2/pba->a_today,3.)*fvarepsilon_rad/(pba->H0*sqrt(Omega_rad));
 
@@ -2594,7 +2595,7 @@ int background_derivs(
   if ((pba->has_dcdm == _TRUE_) && (pba->has_dr == _TRUE_)){
     /** - Compute dr density \f$ \rho' = -4aH \rho + a \Gamma \rho \f$ */
     dy[pba->index_bi_rho_dr] = -4.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dr]+
-      y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm]; 
+      y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
     //  0.5*y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];  /* GFA: just add temporary factor of 1/2 to compare both DCDM modules in class  */
   }
 
