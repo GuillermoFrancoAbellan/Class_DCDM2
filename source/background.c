@@ -356,9 +356,9 @@ if (pba->has_dcdm2==_TRUE_){
   pvecback[pba->index_bg_rho_wdm2]=pvecback_B[pba->index_bi_rho_wdm2];
   rho_tot += pvecback[pba->index_bg_rho_wdm2];
   pvecback[pba->index_bg_w_wdm2]=pvecback_B[pba->index_bi_w_wdm2];
-  p_tot += pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-  rho_r += 3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-  rho_m += pvecback[pba->index_bg_rho_wdm2]-3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
+  // p_tot += pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
+  // rho_r += 3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
+  // rho_m += pvecback[pba->index_bg_rho_wdm2]-3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
 }
 
 
@@ -2594,7 +2594,7 @@ int background_derivs(
   if ((pba->has_dcdm == _TRUE_) && (pba->has_dr == _TRUE_)){
     /** - Compute dr density \f$ \rho' = -4aH \rho + a \Gamma \rho \f$ */
     dy[pba->index_bi_rho_dr] = -4.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dr]+
-      y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm]; 
+      y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
     //  0.5*y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];  /* GFA: just add temporary factor of 1/2 to compare both DCDM modules in class  */
   }
 
