@@ -283,6 +283,7 @@ struct background
   int index_bi_rho_dr2;   /**< GFA: {B} dr2 density*/
   int index_bi_rho_wdm2;  /**< GFA: {B} wdm2 density*/
   double rho_ini_wdm2;  /**< GFA: {B} initial value of  wdm2 density*/
+  double integral_wdm2; /**< GFA: {B} integral needed to compute wdm2 density */
   int index_bi_w_wdm2; /**< GFA: {B} equation of state parameter for wdm2   */
   double w_ini_wdm2;  /**< GFA: {B} initial value of the  EoS parameter for wdm2   */
   int index_bi_rho_fld; /**< {B} fluid density */
