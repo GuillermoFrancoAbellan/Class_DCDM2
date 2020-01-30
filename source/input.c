@@ -964,7 +964,7 @@ int input_read_parameters(
     class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
     "The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
 
-  } else {
+  } else {    /* no shooting method   */
     /** GFA: - Read Gamma2 (two-body decay) in same units as H0, i.e. km/(s Mpc)*/
     class_read_double("Gamma_dcdm2",pba->Gamma_dcdm2);
       /* GFA: Convert Gamma to Mpc */
@@ -979,9 +979,6 @@ int input_read_parameters(
     "The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
     if (pba->Gamma_dcdm2>0) {
       Omega_tot += pba->Omega0_cdm;
-      /** GFA: This is not quite correct, dcdm2 density today is a bit smaller than present cdm density because of the decay */
-      /* and we should consider as well the present densities of dark radiation (dr2) and warm dark matter (wdm2)  */
-      /* This might require a shooting method, necessary for computing a correct Omega0_lambda   */
      }
   }
 
@@ -3597,11 +3594,6 @@ if (pfzw->required_computation_stage >= cs_background){
 if (input_verbose>2)
   printf("Stage 1: background\n");
 ba.background_verbose = 0;
-//ba.background_verbose = 1;
-//return_func=background_init(&pr,&ba);
-//if (return_func!=_SUCCESS_){
-//    printf("background_init failed");
-//}
 class_call(background_init(&pr,&ba),
            ba.error_message,
            errmsg
@@ -3681,7 +3673,6 @@ for (i=0; i < pfzw->target_size; i++) {
 switch (pfzw->target_name[i]) {
 case theta_s:
   output[i] = 100.*th.rs_rec/th.ra_rec-pfzw->target_value[i];
-  printf("computed 100*theta_s=%e \n",100.*th.rs_rec/th.ra_rec);
   break;
 case Omega_dcdmdr:
   rho_dcdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm];
@@ -3940,8 +3931,6 @@ case Omega_ini_dcdm:
   dxdy[index_guess] = a_decay;
   if (gamma > 100)
     dxdy[index_guess] *= gamma/100;
-
-  //printf("x = Omega_ini_guess = %g, dxdy = %g\n",*xguess,*dxdy);
   break;
 case omega_ini_dcdm2:
   Omega0_dcdm2dr2wdm2 = 1./(ba.h*ba.h);
