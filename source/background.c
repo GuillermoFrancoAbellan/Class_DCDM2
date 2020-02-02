@@ -357,15 +357,9 @@ if (pba->has_dcdm2==_TRUE_){
   pvecback[pba->index_bg_rho_wdm2]=pvecback_B[pba->index_bi_rho_wdm2];
   rho_tot += pvecback[pba->index_bg_rho_wdm2];
   pvecback[pba->index_bg_w_wdm2]=pvecback_B[pba->index_bi_w_wdm2];
-<<<<<<< HEAD
   // p_tot += pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
   // rho_r += 3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
   // rho_m += pvecback[pba->index_bg_rho_wdm2]-3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-=======
-//  p_tot += pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-//  rho_r += 3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-//  rho_m += pvecback[pba->index_bg_rho_wdm2]-3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
->>>>>>> 17040b251dc2dac9f006906bdd12dfd54bd1a57a
 }
 
 
@@ -2049,7 +2043,7 @@ int background_initial_conditions(
   /** - define local variables */
 
   /* scale factor */
-  double a, eps,c_eps, aeq; /* GFA */
+  double a, eps, aeq; /* GFA */
 
   double rho_ncdm, p_ncdm, rho_ncdm_rel_tot=0.;
   double f,Omega_rad, Omega_mat, rho_rad, fvarepsilon_rad,fvarepsilon_mat; /* GFA  */
@@ -2062,7 +2056,6 @@ int background_initial_conditions(
   /** - fix initial value of \f$ a \f$ */
   a = ppr->a_ini_over_a_today_default * pba->a_today;
   eps=pba->varepsilon;
-  c_eps=eps/sqrt(1.-2.*eps);
 
   aeq=pba->a_today/(1.+3400.); /* GFA: scale factor at matter-radiation equality (we only need an estimation)  */
 
@@ -2157,9 +2150,10 @@ int background_initial_conditions(
   if (pba->has_dcdm2==_TRUE_) {
       fvarepsilon_rad=pow(1.-2.*eps,-1./2.)*(pow(1.-eps,3.)-pow(1.-2.*eps,3./2.))/pow(eps,2.);
   //    fvarepsilon_rad=(pow(1.-eps,3.)-pow(1.-2.*eps,3./2.))/pow(eps,2.);
-      fvarepsilon_mat=0.5*pow(1.-2.*eps,-1./2.)*pow(1.-2.*eps,5./4.)*sqrt(fabs(pow(eps,2.)*pow(1.-2.*eps,-5./2.)-pow(1.-2.*eps,-3./2.))); //This formula does already a better job, just comes from computing integral with trapezoidal rule
-  //    fvarepsilon_mat=0.5*pow(1.-2.*eps,5./4.)*sqrt(fabs(pow(eps,2.)*pow(1.-2.*eps,-5./2.)-pow(1.-2.*eps,-3./2.))); //This formula does already a better job, just comes from computing integral with trapezoidal rule
-    //  printf("fvarepsilon_mat=%e\n",fvarepsilon_mat); //maybe, multiply by fudge factor so that it agrees with 0.5*(2/5) for varepsilon near0.5
+      fvarepsilon_mat=0.5*pow(1.-2.*eps,-1./2.)*(1.-eps); //This formula does already a better job, just comes from computing integral with trapezoidal rule
+  //    fvarepsilon_mat=0.5*(1.-eps); //This formula does already a better job, just comes from computing integral with trapezoidal rule
+    //  printf("fvarepsilon_mat=%e\n",fvarepsilon_mat); //maybe, multiply by fudge factor of 0.8 so that it agrees with 0.5*(2/5) for varepsilon near0.5
+
       /* compute initial value of integral for wdm2, when decay starts at radiation era (only valid for times much smaller than lifetime) */
       fwdm2_rad=(1./3.)*pow(pba->a_ini_dcdm2/pba->a_today,2.)*fvarepsilon_rad/(pba->H0*sqrt(Omega_rad));
     //  fwdm2_rad=(1./3.)*pow(pba->a_ini_dcdm2/pba->a_today,3.)*fvarepsilon_rad/(pba->H0*sqrt(Omega_rad));
