@@ -1794,15 +1794,18 @@ int background_solve(
       step_a=pvecback_integration[pba->index_bi_a]-a_past; /* GFA: Note that the value of the step in a keeps changing each time, as opposed to the step in tau */
       /* GFA: compute iteratively integrals needed for the wdm2 computation (simple rectangle rule)*/
       sqrt_integrand=sqrt(pow(pba->varepsilon,2.)*pow(a_past,2.)+(1.-2.*pba->varepsilon)*pow(pvecback_integration[pba->index_bi_a],2.));
+  //    sqrt_integrand=sqrt(pow(pba->varepsilon,2.)*pow(a_past/pvecback_integration[pba->index_bi_a],2.)+(1.-2.*pba->varepsilon));
   //    sqrt_integrand=sqrt((pow(pba->varepsilon,2.)/(1.-2.*pba->varepsilon))*pow(a_past/pvecback_integration[pba->index_bi_a],2.)+1.);
       pba->integral_wdm2 += step_a*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/(a_past*H_past); /* GFA: integral in a */
     // pba->integral_wdm2  += ppr->back_integration_stepsize*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/H_past;  /* GFA: integral in tau  */
      if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method */
-       pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*pba->integral_wdm2;
-  //   pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
+     pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*pba->integral_wdm2;
+//     pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
+//     pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
      } else { /* no shooting method */
-       pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*pba->integral_wdm2;
-  //   pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
+     pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*pba->integral_wdm2;
+//     pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
+//     pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*sqrt(1.-2.*pba->varepsilon)*pow(pba->a_today/pvecback_integration[pba->index_bi_a],3)*pba->integral_wdm2;
      }
      /* GFA: compute iteratively integrals needed for the equation of state parameter in wdm2  */
        factor_w_wdm2=(1./3.)*pba->Gamma_dcdm2*pow(pba->varepsilon,2)/(1.-exp(-pba->Gamma_dcdm2*(pvecback_integration[pba->index_bi_time]-t_ini)));
@@ -2172,13 +2175,15 @@ int background_initial_conditions(
          pvecback_integration[pba->index_bi_rho_dr2]=fdr2_rad*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
          pba->integral_wdm2=fwdm2_rad;
     //     pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*sqrt(1.-2.*eps)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,3);
-         pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,4);
+          pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,4);
+    //     pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,3);
          pvecback_integration[pba->index_bi_rho_wdm2]=pba->rho_ini_wdm2;
        } else { /* GFA: decay starts in mat. era  */
          pvecback_integration[pba->index_bi_rho_dr2]=fdr2_mat*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
          pba->integral_wdm2=fwdm2_mat;
-      //   pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*sqrt(1.-2.*eps)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,3);
+    //     pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*sqrt(1.-2.*eps)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,3);
          pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,4);
+    //     pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,3);
          pvecback_integration[pba->index_bi_rho_wdm2]=pba->rho_ini_wdm2;
        }
    } else {  /* no shooting method */
@@ -2197,12 +2202,14 @@ int background_initial_conditions(
          pba->integral_wdm2=fwdm2_rad;
       //   pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega0_cdm*pow(pba->H0,2.)*sqrt(1.-2.*eps)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,3);
          pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega0_cdm*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,4);
+      //   pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega0_cdm*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,3);
          pvecback_integration[pba->index_bi_rho_wdm2]=pba->rho_ini_wdm2;
        } else { /* GFA: decay starts in mat. era  */
          pvecback_integration[pba->index_bi_rho_dr2]=fdr2_mat*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
          pba->integral_wdm2=fwdm2_mat;
       //   pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega0_cdm*pow(pba->H0,2.)*sqrt(1.-2.*eps)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,3);
          pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega0_cdm*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,4);
+      //   pba->rho_ini_wdm2=pba->integral_wdm2*pba->Omega0_cdm*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,3);
          pvecback_integration[pba->index_bi_rho_wdm2]=pba->rho_ini_wdm2;
        }
 
