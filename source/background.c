@@ -1670,13 +1670,17 @@ int background_solve(
   double tau_end;
   /* an index running over bi indices */
   int i;
+  /* GFA: an index running on integration variables for rho_wdm2 computation */
   int j;
+  /* GFA: initial value of index j */
   int j_ini;
-  /* allocate memmory of these vectors properly  */
+  /* GFA: integration variables needed for rho_wdm2 computation, they store values of a, H and T at each time step */
   double * a_int;
   double * H_int;
   double * t_int;
+  /* GFA: integral appearing in the rho_wdm2 computation */
   double * integral2;
+  /* GFA: number of time steps */
   int n_steps;
   /* vector of quantities to be integrated */
   double * pvecback_integration;
@@ -1692,12 +1696,6 @@ int background_solve(
   short is_a_less_a_ini=_TRUE_;
   /* GFA: stepsize in scale factor for the integrals appearing in dr2 and wdm2 computation   */
   double step_a=0.;
-  /* GFA: auxiliary variable: for storing previous value of the scale factor (used in dr2 and wdm2 computation) */
-//  double a_past=0.;
- /* GFA: auxiliary variable: for storing previous value of proper time (used in dr2 and wdm2 computation) */
-//  double time_past=0.;
- /* GFA: auxiliary variable: for storing previous value of Hubble parameter (used in dr2 and wdm2 computation)   */
-//  double H_past=0.;
   /* GFA: auxiliary variable, square root appearing in the integrand of the expression for wdm2*/
   double sqrt_integrand=0.;
   /* GFA: auxiliary variable, integral needed to compute the equation of state parameter in wdm2 */
@@ -1711,7 +1709,8 @@ int background_solve(
 
   /** - allocate vector of quantities to be integrated */
   class_alloc(pvecback_integration,pba->bi_size*sizeof(double),pba->error_message);
-  n_steps=33/ppr->back_integration_stepsize; /* approximate empirical relation I found between stepsize of tau and number of time steps  */
+  n_steps=33/ppr->back_integration_stepsize; /* GFA: approximate empirical relation I found between stepsize of tau and number of time steps  */
+  /* We allocate the size of the following vectors */
   class_alloc(a_int,n_steps*sizeof(double),pba->error_message);
   class_alloc(H_int,n_steps*sizeof(double),pba->error_message);
   class_alloc(t_int,n_steps*sizeof(double),pba->error_message);
@@ -1750,11 +1749,6 @@ int background_solve(
 
   while (pvecback_integration[pba->index_bi_a] < pba->a_today) {
     tau_start = tau_end;
-    /* store values of a, t and H previous to next integration step, this will be needed for the wdm2 computation  */
-//    H_past=pvecback[pba->index_bg_H];
-//    a_past=pvecback_integration[pba->index_bi_a];
-//    time_past=pvecback_integration[pba->index_bi_time];
-
     /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_today; need not be exact, difference corrected later) */
 
     class_call(background_functions(pba,pvecback_integration, pba->short_info, pvecback),
@@ -1801,6 +1795,7 @@ int background_solve(
     if (pvecback_integration[pba->index_bi_a]<pba->a_ini_dcdm2) {
       pvecback_integration[pba->index_bi_rho_wdm2]=pba->rho_ini_wdm2;
     //  pvecback_integration[pba->index_bi_w_wdm2]=pba->w_ini_wdm2;
+    /* GFA: store values of H, a and t  */
       H_int[pba->bt_size]=pvecback[pba->index_bg_H];
       a_int[pba->bt_size]=pvecback_integration[pba->index_bi_a];
       t_int[pba->bt_size]=pvecback_integration[pba->index_bi_time];
@@ -1812,10 +1807,11 @@ int background_solve(
          j_ini=pba->bt_size;
          is_a_less_a_ini=_FALSE_;
         }
+      /* GFA: store values of H, a and t  */
       H_int[pba->bt_size]=pvecback[pba->index_bg_H];
       a_int[pba->bt_size]=pvecback_integration[pba->index_bi_a];
       t_int[pba->bt_size]=pvecback_integration[pba->index_bi_time];
-      integral2[pba->bt_size]=pba->integral_wdm2; /* we initialize the integral */
+      integral2[pba->bt_size]=pba->integral_wdm2; /* GFA: we initialize the integral */
      /* GFA: compute iteratively integral needed for the wdm2 computation (left rectangle rule)*/
       for (j=j_ini; j<=pba->bt_size; j++) {
         step_a=a_int[j]-a_int[j-1]; /* GFA: Note that the value of the step in a keeps changing each time, as opposed to the step in tau */
@@ -1829,17 +1825,7 @@ int background_solve(
        pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/a_int[pba->bt_size],4)*integral2[pba->bt_size];
       }
 
-      //step_a=pvecback_integration[pba->index_bi_a]-a_past; /* GFA: Note that the value of the step in a keeps changing each time, as opposed to the step in tau */
-      /* GFA: compute iteratively integrals needed for the wdm2 computation (simple rectangle rule)*/
-      //sqrt_integrand=sqrt(pow(pba->varepsilon,2.)*pow(a_past,2.)+(1.-2.*pba->varepsilon)*pow(pvecback_integration[pba->index_bi_a],2.));
-      //pba->integral_wdm2 += step_a*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/(a_past*H_past); /* GFA: integral in a */
-     // pba->integral_wdm2  += ppr->back_integration_stepsize*sqrt_integrand*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/H_past;  /* GFA: integral in tau  */
-    //  if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method */
-    //  pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*pba->integral_wdm2;
-    //  } else { /* no shooting method */
-    //  pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/pvecback_integration[pba->index_bi_a],4)*pba->integral_wdm2;
-    //  }
-     /* GFA: compute iteratively integrals needed for the equation of state parameter in wdm2  */
+     /* GFA: compute iteratively integrals needed for the equation of state parameter in wdm2 --> ADD THIS PART (everything related to it is commented out) */
     //   factor_w_wdm2=(1./3.)*pba->Gamma_dcdm2*pow(pba->varepsilon,2)/(1.-exp(-pba->Gamma_dcdm2*(pvecback_integration[pba->index_bi_time]-t_ini)));
     //   integral_w_wdm2+=step_a*a_past*exp(-pba->Gamma_dcdm2*(time_past-t_ini))/(H_past*(pow(pvecback_integration[pba->index_bi_a],2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2)*pow(a_past,2))); /* GFA: integral in a  */
        //integral_w_wdm2+=ppr->back_integration_stepsize*pow(a_past,2)*exp(-pba->Gamma_dcdm2*(pvecback_integration[pba->index_bi_time]-t_ini))/(H_past*(pow(pvecback_integration[pba->index_bi_a],2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2)*pow(a_past,2))); /* GFA: integral in tau */
