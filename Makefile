@@ -32,13 +32,14 @@ AR        = ar rv
 # compatibility)
 PYTHON ?= python
 
+
 # your optimization flag
 OPTFLAG = -O4 -ffast-math #-march=native
 #OPTFLAG = -Ofast -ffast-math #-march=native
 #OPTFLAG = -fast
 
 # your openmp flag (comment for compiling without openmp)
-#OMPFLAG   = -fopenmp
+OMPFLAG   = -fopenmp
 #OMPFLAG   = -mp -mp=nonuma -mp=allcores -g
 #OMPFLAG   = -openmp
 
@@ -200,3 +201,4 @@ clean: .base
 	rm -f libclass.a
 	rm -f $(MDIR)/python/classy.c
 	rm -rf $(MDIR)/python/build
+	rm class
