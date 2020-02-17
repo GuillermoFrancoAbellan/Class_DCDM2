@@ -966,14 +966,28 @@ int input_read_parameters(
     if (flag1 == _TRUE_)
       pba->Gamma_dcdm2 = param1*(1.e3 / _c_);
     if (flag2 == _TRUE_)
-      pba->Gamma_dcdm2 = pow(10,param2)*(1.e3 / _c_);
+      pba->Gamma_dcdm2 = pow(10.,param2)*(1.e3 / _c_);
 /* GFA: Read initial scale factor for the two-body decay  */
  class_read_double("a_ini_dcdm2",pba->a_ini_dcdm2);
- class_test(pba->a_ini_dcdm2>pow(1.+1089.,-1),errmsg,
+ class_test(pba->a_ini_dcdm2>(pba->a_today/(1.+1089.0)),errmsg,
  "The value that you chose for the initial scale factor of the two-body decay, %e, is too big", pba->a_ini_dcdm2);
     /** GFA: - Read varepsilon (two-body decay)   */
-    class_read_double("varepsilon",pba->varepsilon);
-    class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
+  //  class_read_double("varepsilon",pba->varepsilon);
+  class_call(parser_read_double(pfc,"varepsilon",&param1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+  class_call(parser_read_double(pfc,"Log10_varepsilon",&param2,&flag2,errmsg),
+             errmsg,
+             errmsg);
+  class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
+             errmsg,
+            "In input file, you can only enter one of varepsilon or Log10_varepsilon, choose one");
+    if (flag1 == _TRUE_)
+      pba->varepsilon= param1;
+    if (flag2 == _TRUE_)
+      pba->varepsilon = pow(10.,param2);
+
+  class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
     "The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
 
   } else {    /* no shooting method   */
@@ -986,8 +1000,22 @@ int input_read_parameters(
     class_test(pba->a_ini_dcdm2>pow(1.+1089.,-1),errmsg,
     "The value that you chose for the initial scale factor of the two-body decay, %e, is too big", pba->a_ini_dcdm2);
       /** GFA: - Read varepsilon (two-body decay)   */
-    class_read_double("varepsilon",pba->varepsilon);
-    class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
+  //  class_read_double("varepsilon",pba->varepsilon);
+  class_call(parser_read_double(pfc,"varepsilon",&param1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+  class_call(parser_read_double(pfc,"Log10_varepsilon",&param2,&flag2,errmsg),
+             errmsg,
+             errmsg);
+  class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
+             errmsg,
+            "In input file, you can only enter one of varepsilon or Log10_varepsilon, choose one");
+    if (flag1 == _TRUE_)
+      pba->varepsilon= param1;
+    if (flag2 == _TRUE_)
+      pba->varepsilon = pow(10.,param2);
+
+  class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
     "The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
     if (pba->Gamma_dcdm2>0) {
       Omega_tot += pba->Omega0_cdm;
