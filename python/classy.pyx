@@ -1027,10 +1027,10 @@ cdef class Class:
 
     def h(self):
         return self.ba.h
-    
+
     def rs_rec(self):
         return self.th.rs_rec
- 
+
     def n_s(self):
         return self.pm.n_s
 
@@ -1039,6 +1039,9 @@ cdef class Class:
 
     def Omega_m(self):
         return self.ba.Omega0_m
+
+    def Omega0_dcdm2dr2wdm2(self):
+        return self.ba.Omega0_dcdm2dr2wdm2
 
     def Omega_r(self):
         return self.ba.Omega0_r
@@ -1651,6 +1654,8 @@ cdef class Class:
                 value = self.ba.Neff
             elif name == 'Omega_m':
                 value = self.ba.Omega0_m
+            elif name == 'Omega0_dcdm2dr2wdm2':
+                value = self.ba.Omega0_dcdm2dr2wdm2
             elif name == 'omega_m':
                 value = self.ba.Omega0_m/self.ba.h**2
             elif name == 'tau_reio':
