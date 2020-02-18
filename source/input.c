@@ -4037,7 +4037,7 @@ class_call(input_fzerofun_1d(x1,
 dx = 1.5*f1*dxdy;
 
 /** - Then we do a linear hunt for the boundaries */
-for (iter=1; iter<=15; iter++){
+for (iter=1; iter<=30; iter++){
 //x2 = x1 + search_dir*dx;
 x2 = x1 - dx;
 
