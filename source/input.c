@@ -992,9 +992,20 @@ int input_read_parameters(
 
   } else {    /* no shooting method   */
     /** GFA: - Read Gamma2 (two-body decay) in same units as H0, i.e. km/(s Mpc)*/
-    class_read_double("Gamma_dcdm2",pba->Gamma_dcdm2);
-      /* GFA: Convert Gamma to Mpc */
-    pba->Gamma_dcdm2 *= (1.e3 / _c_);
+    class_call(parser_read_double(pfc,"Gamma_dcdm2",&param1,&flag1,errmsg),
+               errmsg,
+               errmsg);
+    class_call(parser_read_double(pfc,"Log10_Gamma_dcdm2",&param2,&flag2,errmsg),
+               errmsg,
+               errmsg);
+    class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
+               errmsg,
+               "In input file, you can only enter one of Gamma_dcdm2 or Log10_Gamma_dcdm2, choose one");
+    /* GFA: Convert Gamma to Mpc */
+      if (flag1 == _TRUE_)
+        pba->Gamma_dcdm2 = param1*(1.e3 / _c_);
+      if (flag2 == _TRUE_)
+        pba->Gamma_dcdm2 = pow(10.,param2)*(1.e3 / _c_);
       /* GFA: Read initial scale factor for the two-body decay  */
     class_read_double("a_ini_dcdm2",pba->a_ini_dcdm2);
     class_test(pba->a_ini_dcdm2>pow(1.+1089.,-1),errmsg,
