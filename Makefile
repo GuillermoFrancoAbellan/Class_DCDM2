@@ -32,6 +32,7 @@ AR        = ar rv
 # compatibility)
 PYTHON ?= python
 
+
 # your optimization flag
 OPTFLAG = -O4 -ffast-math #-march=native
 #OPTFLAG = -Ofast -ffast-math #-march=native
@@ -200,3 +201,4 @@ clean: .base
 	rm -f libclass.a
 	rm -f $(MDIR)/python/classy.c
 	rm -rf $(MDIR)/python/build
+	rm class

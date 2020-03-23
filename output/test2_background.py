@@ -11,12 +11,12 @@ roots = ['test2_background']
 fig, ax = plt.subplots()
 
 index, curve = 0, data[0]
-y_axis = ['rho_dr']
-tex_names = ['(8\\pi G/3)rho_dr']
+y_axis = ['H[1/Mpc]']
+tex_names = ['H [1/Mpc]']
 x_axis = 'z'
 ylim = []
 xlim = []
-ax.plot(curve[:, 0], curve[:, 14])
+ax.loglog(curve[:, 0], abs(curve[:, 3]))
 
 ax.legend([root+': '+elem for (root, elem) in
     itertools.product(roots, y_axis)], loc='best')

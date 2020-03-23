@@ -70,6 +70,7 @@ cdef extern from "class.h":
         double Omega0_g
         double Omega0_b
         double Omega0_cdm
+        double Omega0_dcdm2dr2wdm2
         double Omega0_dcdm
         double Omega0_ncdm_tot
         double Omega0_lambda
