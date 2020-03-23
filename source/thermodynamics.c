@@ -1469,10 +1469,10 @@ int thermodynamics_energy_injection(
       } while (integrand/first_integrand > 0.02);
 
       /* uncomment these lines if you also want to compute the on-the-spot for comparison */
-      class_call(thermodynamics_onthespot_energy_injection(ppr,pba,preco,z,&onthespot,error_message),
+    /*  class_call(thermodynamics_onthespot_energy_injection(ppr,pba,preco,z,&onthespot,error_message),
                  error_message,
                  error_message);
-
+     */
     }
     else {
       class_call(thermodynamics_onthespot_energy_injection(ppr,pba,preco,z,&result,error_message),
