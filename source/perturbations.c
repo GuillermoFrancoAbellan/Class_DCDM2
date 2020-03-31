@@ -1609,6 +1609,7 @@ int perturb_timesampling_for_sources(
 
   /** - --> infer total number of time steps, ppt->tau_size */
   ppt->tau_size = counter;
+  printf("tau_size=%d\n",ppt->tau_size);
 
   /** - --> allocate array of time steps, ppt->tau_sampling[index_tau] */
   class_alloc(ppt->tau_sampling,ppt->tau_size * sizeof(double),ppt->error_message);

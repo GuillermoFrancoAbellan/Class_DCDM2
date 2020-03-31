@@ -338,29 +338,19 @@ int background_functions(
     rho_r += pvecback[pba->index_bg_rho_dr];
   }
 
-  /* GFA: dcdm2, dr2 and wdm2  */
-if (pba->has_dcdm2==_TRUE_){
-  /* GFA: pass value of rho_dcdm2 to output*/
-  pvecback[pba->index_bg_rho_dcdm2]=pvecback_B[pba->index_bi_rho_dcdm2];
-  rho_tot += pvecback[pba->index_bg_rho_dcdm2];
-  p_tot += 0.;
-  rho_m += pvecback[pba->index_bg_rho_dcdm2];
-
-  /* GFA: pass value of rho_dr2 to output*/
-  pvecback[pba->index_bg_rho_dr2]=pvecback_B[pba->index_bi_rho_dr2];
-  rho_tot += pvecback[pba->index_bg_rho_dr2];
-  p_tot += (1./3.)*pvecback[pba->index_bg_rho_dr2];
-  dp_dloga += -(4./3.) * pvecback[pba->index_bg_rho_dr2];
-  rho_r += pvecback[pba->index_bg_rho_dr2];
-
-  /* GFA: pass value of rho_wdm2 to output*/
-  pvecback[pba->index_bg_rho_wdm2]=pvecback_B[pba->index_bi_rho_wdm2];
-  rho_tot += pvecback[pba->index_bg_rho_wdm2];
-  pvecback[pba->index_bg_w_wdm2]=pvecback_B[pba->index_bi_w_wdm2];
-  p_tot += pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-  rho_r += 3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-  rho_m += pvecback[pba->index_bg_rho_wdm2]-3.*pvecback[pba->index_bg_w_wdm2]*pvecback[pba->index_bg_rho_wdm2];
-}
+  /* GFA: dcdm2, dr and wdm  */
+//if (pba->has_wdm_daughter==_TRUE_){
+  /* GFA: pass value of rho_wdm to output*/
+//  pvecback[pba->index_bg_rho_wdm]=pvecback_B[pba->index_bi_rho_wdm];
+//  rho_tot += pvecback[pba->index_bg_rho_wdm];
+//  pvecback[pba->index_bg_w_wdm]=pvecback_B[pba->index_bi_w_wdm];
+//  pvecback[pba->index_bg_p_wdm_a]=pvecback[pba->index_bg_w_wdm]*pvecback[pba->index_bg_rho_wdm];
+//  pvecback[pba->index_bg_p_wdm_b]=pvecback_B[pba->index_bi_p_wdm_b];
+//  p_tot += pvecback[pba->index_bg_p_wdm_a];
+//  rho_r += 3.*pvecback[pba->index_bg_p_wdm_a];
+//  rho_m += pvecback[pba->index_bg_rho_wdm]-3.*pvecback[pba->index_bg_p_wdm_a];
+  /* GFA: I still need to pass the value of dp_dloga! */
+//}
 
 
   /* Scalar field */
@@ -391,10 +381,11 @@ if (pba->has_dcdm2==_TRUE_){
 
       /* function returning background ncdm[n_ncdm] quantities (only
          those for which non-NULL pointers are passed) */
-      class_call(background_ncdm_momenta(
+      class_call(background_ncdm_momenta(pba, pbadist,
                                          pba->q_ncdm_bg[n_ncdm],
                                          pba->w_ncdm_bg[n_ncdm],
                                          pba->q_size_ncdm_bg[n_ncdm],
+                                         n_ncdm,
                                          pba->M_ncdm[n_ncdm],
                                          pba->factor_ncdm[n_ncdm],
                                          1./a_rel-1.,
@@ -654,9 +645,10 @@ int background_init(
         }
 
         /* call this function to get rho_ncdm */
-        background_ncdm_momenta(pba->q_ncdm_bg[n_ncdm],
+        background_ncdm_momenta(pba, pbadist, pba->q_ncdm_bg[n_ncdm],
                                 pba->w_ncdm_bg[n_ncdm],
                                 pba->q_size_ncdm_bg[n_ncdm],
+                                n_ncdm,
                                 0.,
                                 pba->factor_ncdm[n_ncdm],
                                 0.,
@@ -876,6 +868,7 @@ int background_indices(
   pba->has_ncdm = _FALSE_;
   pba->has_dcdm = _FALSE_;
   pba->has_dr = _FALSE_;
+  pba->has_wdm_daughter =_FALSE_;
   pba->has_scf = _FALSE_;
   pba->has_lambda = _FALSE_;
   pba->has_fld = _FALSE_;
@@ -885,20 +878,23 @@ int background_indices(
   if (pba->Omega0_cdm != 0.)
     pba->has_cdm = _TRUE_;
 
-  if (pba->Omega0_ncdm_tot != 0.)
+//  if (pba->Omega0_ncdm_tot != 0.)
+  if (pba->N_ncdm != 0.) /* GFA */
     pba->has_ncdm = _TRUE_;
 
   if (pba->Omega0_dcdmdr != 0.){
     pba->has_dcdm = _TRUE_;
-    pba->has_cdm = _FALSE_; /** GFA: to avoid having both cdm and dcdm components */
+  //  pba->has_cdm = _FALSE_; /** GFA: to avoid having both cdm and dcdm components */
     if (pba->Gamma_dcdm != 0.)
       pba->has_dr = _TRUE_;
   }
 
 
-if ( (pba->Gamma_dcdm2 != 0.) || (pba->Omega0_dcdm2dr2wdm2 != 0.) ) {
-    pba->has_dcdm2 = _TRUE_;
-    pba->has_cdm = _FALSE_;   /** GFA: to avoid having both cdm and dcdm components */
+if ( (pba->Omega_ini_dcdm2_noShoot != 0.) || (pba->Omega0_dcdmdrwdm != 0.) ) {
+    pba->has_dcdm = _TRUE_;
+    pba->has_dr = _TRUE_;
+    pba->has_wdm_daughter = _TRUE_;
+//    pba->has_cdm = _FALSE_;   /** GFA: to avoid having both cdm and dcdm components */
   }
 
   if (pba->Omega0_scf != 0.)
@@ -952,15 +948,12 @@ if ( (pba->Gamma_dcdm2 != 0.) || (pba->Omega0_dcdm2dr2wdm2 != 0.) ) {
   /* - index for dr */
   class_define_index(pba->index_bg_rho_dr,pba->has_dr,index_bg,1);
 
-  /* - GFA: index for dcdm2 */
-  class_define_index(pba->index_bg_rho_dcdm2,pba->has_dcdm2,index_bg,1);
+  /* - GFA: index for wdm */
+//  class_define_index(pba->index_bg_rho_wdm,pba->has_wdm_daughter,index_bg,1);
+//  class_define_index(pba->index_bg_w_wdm,pba->has_wdm_daughter,index_bg,1);
+//  class_define_index(pba->index_bg_p_wdm_a,pba->has_wdm_daughter,index_bg,1);
+//  class_define_index(pba->index_bg_p_wdm_b,pba->has_wdm_daughter,index_bg,1);
 
-  /* - GFA: index for dr2 */
-  class_define_index(pba->index_bg_rho_dr2,pba->has_dcdm2,index_bg,1);
-
-  /* - GFA: index for wdm2 */
-  class_define_index(pba->index_bg_rho_wdm2,pba->has_dcdm2,index_bg,1);
-  class_define_index(pba->index_bg_w_wdm2,pba->has_dcdm2,index_bg,1);
   /* - indices for scalar field */
   class_define_index(pba->index_bg_phi_scf,pba->has_scf,index_bg,1);
   class_define_index(pba->index_bg_phi_prime_scf,pba->has_scf,index_bg,1);
@@ -1051,15 +1044,13 @@ if ( (pba->Gamma_dcdm2 != 0.) || (pba->Omega0_dcdm2dr2wdm2 != 0.) ) {
   /* -> energy density in DR */
   class_define_index(pba->index_bi_rho_dr,pba->has_dr,index_bi,1);
 
-  /* GFA: energy density in DCDM2 */
-  class_define_index(pba->index_bi_rho_dcdm2,pba->has_dcdm2,index_bi,1);
-  /* GFA: energy density in DR2 */
-  class_define_index(pba->index_bi_rho_dr2,pba->has_dcdm2,index_bi,1);
-  /* GFA: energy density in WDM2 */
-  class_define_index(pba->index_bi_rho_wdm2,pba->has_dcdm2,index_bi,1);
+  /* GFA: energy density in WDM */
+//  class_define_index(pba->index_bi_rho_wdm,pba->has_wdm_daughter,index_bi,1);
 
-  /* GFA: equation of state parameter in WDM2  */
-  class_define_index(pba->index_bi_w_wdm2,pba->has_dcdm2,index_bi,1);
+  /* GFA: equation of state parameter in WDM  */
+//  class_define_index(pba->index_bi_w_wdm,pba->has_wdm_daughter,index_bi,1);
+  /* GFA: pressure in WDM  */
+//  class_define_index(pba->index_bi_p_wdm_b,pba->has_wdm_daughter,index_bi,1);
 
   /* -> energy density in fluid */
   class_define_index(pba->index_bi_rho_fld,pba->has_fld,index_bi,1);
@@ -1109,7 +1100,7 @@ if ( (pba->Gamma_dcdm2 != 0.) || (pba->Omega0_dcdm2dr2wdm2 != 0.) ) {
 /**
  * This is the routine where the distribution function f0(q) of each
  * ncdm species is specified (it is the only place to modify if you
- * need a partlar f0(q))
+ * need a particular f0(q))
  *
  * @param pbadist Input:  structure containing all parameters defining f0(q)
  * @param q       Input:  momentum
@@ -1119,6 +1110,8 @@ if ( (pba->Gamma_dcdm2 != 0.) || (pba->Omega0_dcdm2dr2wdm2 != 0.) ) {
 int background_ncdm_distribution(
                                  void * pbadist,
                                  double q,
+                                 double H,
+                                 double t,
                                  double * f0
                                  ) {
   struct background * pba;
@@ -1127,6 +1120,8 @@ int background_ncdm_distribution(
   double ksi;
   double qlast,dqlast,f0last,df0last;
   double *param;
+  double gamma; /* GFA */
+
   /* Variables corresponding to entries in param: */
   //double square_s12,square_s23,square_s13;
   //double mixing_matrix[3][3];
@@ -1138,6 +1133,7 @@ int background_ncdm_distribution(
   param = pba->ncdm_psd_parameters; /* extract the optional parameter list from it */
   n_ncdm = pbadist_local->n_ncdm;   /* extract index of ncdm species under consideration */
   ksi = pba->ksi_ncdm[n_ncdm];      /* extract chemical potential */
+  gamma =pba->Gamma_dcdm;           /* GFA: extract dcdm decay rate */
 
   /** - shall we interpolate in file, or shall we use analytical formula below? */
 
@@ -1185,58 +1181,72 @@ int background_ncdm_distribution(
        species.
     */
 
-    /**************************************************/
-    /*    FERMI-DIRAC INCLUDING CHEMICAL POTENTIALS   */
-    /**************************************************/
+    /* GFA */
+    if ( (pba->Omega_ini_dcdm2_noShoot != 0.) || (pba->Omega0_dcdmdrwdm != 0.) ) {
+      /**************************************************/
+      /*    P.S.D. OF WARM DARK MATTER DAUGHTER   */
+      /**************************************************/
 
-    *f0 = 1.0/pow(2*_PI_,3)*(1./(exp(q-ksi)+1.) +1./(exp(q+ksi)+1.));
+      *f0 = gamma*exp(-gamma*t)/(4.*_PI_*pow(q,3)*H);
 
-    /**************************************************/
 
-    /** This form is only appropriate for approximate studies, since in
-        reality the chemical potentials are associated with flavor
-        eigenstates, not mass eigenstates. It is easy to take this into
-        account by introducing the mixing angles. In the later part
-        (not read by the code) we illustrate how to do this. */
+    } else {
+      /**************************************************/
+      /*    FERMI-DIRAC INCLUDING CHEMICAL POTENTIALS   */
+      /**************************************************/
 
-    if (_FALSE_) {
+      *f0 = 1.0/pow(2*_PI_,3)*(1./(exp(q-ksi)+1.) +1./(exp(q+ksi)+1.));
 
-      /* We must use the list of extra parameters read in input, stored in the
-         ncdm_psd_parameter list, extracted above from the structure
-         and now called param[..] */
+      /**************************************************/
 
-      /* check that this list has been read */
-      class_test(param == NULL,
-                 pba->error_message,
-                 "Analytic expression wants to use 'ncdm_psd_parameters', but they have not been entered!");
+      /** This form is only appropriate for approximate studies, since in
+          reality the chemical potentials are associated with flavor
+          eigenstates, not mass eigenstates. It is easy to take this into
+          account by introducing the mixing angles. In the later part
+          (not read by the code) we illustrate how to do this. */
 
-      /* extract values from the list (in this example, mixing angles) */
-      double square_s12=param[0];
-      double square_s23=param[1];
-      double square_s13=param[2];
+      if (_FALSE_) {
 
-      /* infer mixing matrix */
-      double mixing_matrix[3][3];
-      int i;
+        /* We must use the list of extra parameters read in input, stored in the
+           ncdm_psd_parameter list, extracted above from the structure
+           and now called param[..] */
 
-      mixing_matrix[0][0]=pow(fabs(sqrt((1-square_s12)*(1-square_s13))),2);
-      mixing_matrix[0][1]=pow(fabs(sqrt(square_s12*(1-square_s13))),2);
-      mixing_matrix[0][2]=fabs(square_s13);
-      mixing_matrix[1][0]=pow(fabs(sqrt((1-square_s12)*square_s13*square_s23)+sqrt(square_s12*(1-square_s23))),2);
-      mixing_matrix[1][1]=pow(fabs(sqrt(square_s12*square_s23*square_s13)-sqrt((1-square_s12)*(1-square_s23))),2);
-      mixing_matrix[1][2]=pow(fabs(sqrt(square_s23*(1-square_s13))),2);
-      mixing_matrix[2][0]=pow(fabs(sqrt(square_s12*square_s23)-sqrt((1-square_s12)*square_s13*(1-square_s23))),2);
-      mixing_matrix[2][1]=pow(sqrt((1-square_s12)*square_s23)+sqrt(square_s12*square_s13*(1-square_s23)),2);
-      mixing_matrix[2][2]=pow(fabs(sqrt((1-square_s13)*(1-square_s23))),2);
+        /* check that this list has been read */
+        class_test(param == NULL,
+                   pba->error_message,
+                   "Analytic expression wants to use 'ncdm_psd_parameters', but they have not been entered!");
 
-      /* loop over flavor eigenstates and compute psd of mass eigenstates */
-      *f0=0.0;
-      for(i=0;i<3;i++){
+        /* extract values from the list (in this example, mixing angles) */
+        double square_s12=param[0];
+        double square_s23=param[1];
+        double square_s13=param[2];
 
-    	*f0 += mixing_matrix[i][n_ncdm]*1.0/pow(2*_PI_,3)*(1./(exp(q-pba->ksi_ncdm[i])+1.) +1./(exp(q+pba->ksi_ncdm[i])+1.));
+        /* infer mixing matrix */
+        double mixing_matrix[3][3];
+        int i;
 
-      }
-    } /* end of region not used, but shown as an example */
+        mixing_matrix[0][0]=pow(fabs(sqrt((1-square_s12)*(1-square_s13))),2);
+        mixing_matrix[0][1]=pow(fabs(sqrt(square_s12*(1-square_s13))),2);
+        mixing_matrix[0][2]=fabs(square_s13);
+        mixing_matrix[1][0]=pow(fabs(sqrt((1-square_s12)*square_s13*square_s23)+sqrt(square_s12*(1-square_s23))),2);
+        mixing_matrix[1][1]=pow(fabs(sqrt(square_s12*square_s23*square_s13)-sqrt((1-square_s12)*(1-square_s23))),2);
+        mixing_matrix[1][2]=pow(fabs(sqrt(square_s23*(1-square_s13))),2);
+        mixing_matrix[2][0]=pow(fabs(sqrt(square_s12*square_s23)-sqrt((1-square_s12)*square_s13*(1-square_s23))),2);
+        mixing_matrix[2][1]=pow(sqrt((1-square_s12)*square_s23)+sqrt(square_s12*square_s13*(1-square_s23)),2);
+        mixing_matrix[2][2]=pow(fabs(sqrt((1-square_s13)*(1-square_s23))),2);
+
+        /* loop over flavor eigenstates and compute psd of mass eigenstates */
+        *f0=0.0;
+        for(i=0;i<3;i++){
+
+        *f0 += mixing_matrix[i][n_ncdm]*1.0/pow(2*_PI_,3)*(1./(exp(q-pba->ksi_ncdm[i])+1.) +1./(exp(q+pba->ksi_ncdm[i])+1.));
+
+        }
+      } /* end of region not used, but shown as an example */
+
+     }
+
+
   }
 
   return _SUCCESS_;
@@ -1284,6 +1294,8 @@ int background_ncdm_init(
                          ) {
 
   int index_q, k,tolexp,row,status,filenum;
+  int k_wdm, i; /* GFA */
+  double h, qmax_wdm; /* GFA */
   double f0m2,f0m1,f0,f0p1,f0p2,dq,q,df0dq,tmp1,tmp2;
   struct background_parameters_for_distributions pbadist;
   FILE *psdfile;
@@ -1302,7 +1314,8 @@ int background_ncdm_init(
   class_alloc(pba->q_size_ncdm_bg,sizeof(int)*pba->N_ncdm,pba->error_message);
   class_alloc(pba->factor_ncdm,sizeof(double)*pba->N_ncdm,pba->error_message);
 
-  for(k=0, filenum=0; k<pba->N_ncdm; k++){
+  /* GFA: the following loop only concerns the standard ncdm species, i.e., those which are not the wdm daughter particle  */
+  for(k=0, filenum=0; k<pba->N_ncdm_no_decay; k++){
     pbadist.n_ncdm = k;
     pbadist.q = NULL;
     pbadist.tablesize = 0;
@@ -1437,7 +1450,8 @@ int background_ncdm_init(
 
     for (index_q=0; index_q<pba->q_size_ncdm[k]; index_q++) {
       q = pba->q_ncdm[k][index_q];
-      class_call(background_ncdm_distribution(&pbadist,q,&f0),
+      /* GFA: Here H and t are not used, so we simply pass 0. values */
+      class_call(background_ncdm_distribution(&pbadist,q,0.,0.,&f0),
                  pba->error_message,pba->error_message);
 
       //Loop to find appropriate dq:
@@ -1452,18 +1466,18 @@ int background_ncdm_init(
         else{
           dq = exp(tolexp)*(pba->q_ncdm[k][index_q+1]-pba->q_ncdm[k][index_q-1]);
         }
-
-        class_call(background_ncdm_distribution(&pbadist,q-2*dq,&f0m2),
+        /* GFA: Here H and t are not used, so we simply pass 0. values */
+        class_call(background_ncdm_distribution(&pbadist,q-2*dq,0.,0.,&f0m2),
                    pba->error_message,pba->error_message);
-        class_call(background_ncdm_distribution(&pbadist,q+2*dq,&f0p2),
+        class_call(background_ncdm_distribution(&pbadist,q+2*dq,0.,0.,&f0p2),
                    pba->error_message,pba->error_message);
 
         if (fabs((f0p2-f0m2)/f0)>sqrt(ppr->smallest_allowed_variation)) break;
       }
-
-      class_call(background_ncdm_distribution(&pbadist,q-dq,&f0m1),
+      /* GFA: Here H and t are not used, so we simply pass 0. values */
+      class_call(background_ncdm_distribution(&pbadist,q-dq,0.,0.,&f0m1),
                  pba->error_message,pba->error_message);
-      class_call(background_ncdm_distribution(&pbadist,q+dq,&f0p1),
+      class_call(background_ncdm_distribution(&pbadist,q+dq,0.,0.,&f0p1),
                  pba->error_message,pba->error_message);
       //5 point estimate of the derivative:
       df0dq = (+f0m2-8*f0m1+8*f0p1-f0p2)/12.0/dq;
@@ -1485,8 +1499,33 @@ int background_ncdm_init(
       free(pbadist.d2f0);
     }
   }
+ /* GFA: For the wdm daughter, we are going to fill out the vectors q_ncdm, q_ncdm_bg, and the numbers q_size_ncdm, q_size_ncdm_bg and factor_ncdm */
+ if ( (pba->Omega_ini_dcdm2_noShoot != 0.) || (pba->Omega0_dcdmdrwdm != 0.) ) {
+  k_wdm = pba->N_ncdm-1;
+ /* GFA For the moment, we are going to choose the same q sampling for background and perturbations, might be changed in the future */
+  pba->q_size_ncdm_bg[k_wdm]=33/ppr->back_integration_stepsize; /* GFA: approximate empirical relation I found between stepsize of tau and number of time steps  */ ;
+  pba->q_size_ncdm[k_wdm] = pba->q_size_ncdm_bg[k_wdm];
+  class_alloc(pba->q_ncdm_bg[k_wdm],pba->q_size_ncdm_bg[k_wdm]*sizeof(double),pba->error_message);
+  class_alloc(pba->w_ncdm_bg[k_wdm],pba->q_size_ncdm_bg[k_wdm]*sizeof(double),pba->error_message);
+  class_alloc(pba->q_ncdm[k_wdm],pba->q_size_ncdm[k_wdm]*sizeof(double),pba->error_message);
+  class_alloc(pba->w_ncdm[k_wdm],pba->q_size_ncdm[k_wdm]*sizeof(double),pba->error_message);
+  class_alloc(pba->dlnf0_dlnq_ncdm[k_wdm],pba->q_size_ncdm[k_wdm]*sizeof(double),pba->error_message);
+  /* GFA: by fixing value of qmax, we are choosing a convention for the normalization of the momentum grid, might be changed if necessary */
+  qmax_wdm=pba->varepsilon/sqrt(1.0-2.0*pba->varepsilon);
+  h=qmax_wdm/pba->q_size_ncdm[k_wdm];
+  for (i=0; i < pba->q_size_ncdm[k_wdm]; i++) { /** GFA: Note that we count q=0 as an extra point with weight 0 */
+   pba->q_ncdm_bg[k_wdm][i] = h + i*h;
+   pba->q_ncdm[k_wdm][i] = pba->q_ncdm_bg[k_wdm][i];
+  }
+ if (pba->Omega0_dcdmdrwdm != 0.) { /* GFA: Remember that in unit CLASS conventions, the critical density is pow(pba->H0,2)*/
+   pba->factor_ncdm[k_wdm] = 4.0*_PI_*sqrt(1.0-2.0*pba->varepsilon)*pba->Omega_ini_dcdm2*pow(pba->H0,2);
+  } else {
+   pba->factor_ncdm[k_wdm] = 4.0*_PI_*sqrt(1.0-2.0*pba->varepsilon)*pba->Omega_ini_dcdm2_noShoot*pow(pba->H0,2);
+  }
 
+}
 
+/* GFA: For the wdm daughter, the vectors w_ncdm, w_ncdm_bg, dlnf0_dlnq_ncdm will have to be filled out later  */
   return _SUCCESS_;
 }
 
@@ -1512,9 +1551,12 @@ int background_ncdm_init(
 
 int background_ncdm_momenta(
                             /* Only calculate for non-NULL pointers: */
+                            struct background *pba,
+                            struct background_parameters_for_distributions *pbadist,
                             double * qvec,
                             double * wvec,
                             int qsize,
+                            int n_ncdm;
                             double M,
                             double factor,
                             double z,
@@ -1529,11 +1571,13 @@ int background_ncdm_momenta(
   double epsilon;
   double q2;
   double factor2;
+  double qmax, qmax_wdm,h , a, q, f0; /* GFA */
+
   /** Summary: */
 
   /** - rescale normalization at given redshift */
   factor2 = factor*pow(1+z,4);
-
+  a=1./(1.+z);
   /** - initialize quantities */
   if (n!=NULL) *n = 0.;
   if (rho!=NULL) *rho = 0.;
@@ -1541,22 +1585,48 @@ int background_ncdm_momenta(
   if (drho_dM!=NULL) *drho_dM = 0.;
   if (pseudo_p!=NULL) *pseudo_p = 0.;
 
+ if ((n_ncdm+1) > pba->N_ncdm_no_decay) { /*GFA: if this condition is fulfilled, then index n_ncdm corresponds to wdm */
   /** - loop over momenta */
-  for (index_q=0; index_q<qsize; index_q++) {
+ qmax = a*pba->varepsilon/sqrt(1.0-2.0*pba->varepsilon);
+ qmax_wdm = pba->varepsilon/sqrt(1.0-2.0*pba->varepsilon);
+ h=qmax_wdm/qsize;
+ q=0.;
+ index_q=1.;
+ while (q<qmax) {
+  q=qvec[index_q-1];
+  q2=q*q;
+  epsilon = sqrt(q2+a*a);
+  class_call(background_ncdm_distribution(&pbadist,q,pba->H_at_a[index_q-1],pba->t_at_a[index_q-1],&f0),
+             pba->error_message,pba->error_message);
+  wvec[index_q]=f0*h;
 
-    /* squared momentum */
-    q2 = qvec[index_q]*qvec[index_q];
+  if (rho!=NULL) *rho += q2*epsilon*wvec[index_q];
+  if (p!=NULL) *p += q2*q2/3./epsilon*wvec[index_q];
+  if (pseudo_p!=NULL) *pseudo_p += pow(q2/epsilon,3)/3.0*wvec[index_q];
+  /* GFA: Check if it is worthy to compute n or drho_dM */
+  /* GFA: I still have to fill out vectors w_ncdm (I only did for w_ncdm_bg) and dlnf0_dlnq_ncdm */
+  index_q++;
+ }
 
-    /* energy */
-    epsilon = sqrt(q2+M*M/(1.+z)/(1.+z));
 
-    /* integrand of the various quantities */
-    if (n!=NULL) *n += q2*wvec[index_q];
-    if (rho!=NULL) *rho += q2*epsilon*wvec[index_q];
-    if (p!=NULL) *p += q2*q2/3./epsilon*wvec[index_q];
-    if (drho_dM!=NULL) *drho_dM += q2*M/(1.+z)/(1.+z)/epsilon*wvec[index_q];
-    if (pseudo_p!=NULL) *pseudo_p += pow(q2/epsilon,3)/3.0*wvec[index_q];
-  }
+ } else {
+   /** - loop over momenta */
+   for (index_q=0; index_q<qsize; index_q++) {
+
+     /* squared momentum */
+     q2 = qvec[index_q]*qvec[index_q];
+
+     /* energy */
+     epsilon = sqrt(q2+M*M/(1.+z)/(1.+z));
+
+     /* integrand of the various quantities */
+     if (n!=NULL) *n += q2*wvec[index_q];
+     if (rho!=NULL) *rho += q2*epsilon*wvec[index_q];
+     if (p!=NULL) *p += q2*q2/3./epsilon*wvec[index_q];
+     if (drho_dM!=NULL) *drho_dM += q2*M/(1.+z)/(1.+z)/epsilon*wvec[index_q];
+     if (pseudo_p!=NULL) *pseudo_p += pow(q2/epsilon,3)/3.0*wvec[index_q];
+   }
+ }
 
   /** - adjust normalization */
   if (n!=NULL) *n *= factor2/(1.+z);
@@ -1588,9 +1658,10 @@ int background_ncdm_M_from_Omega(
   rho0 = pba->H0*pba->H0*pba->Omega0_ncdm[n_ncdm]; /*Remember that rho is defined such that H^2=sum(rho_i) */
   M = 0.0;
 
-  background_ncdm_momenta(pba->q_ncdm_bg[n_ncdm],
+  background_ncdm_momenta(pba,pbadist,pba->q_ncdm_bg[n_ncdm],
                           pba->w_ncdm_bg[n_ncdm],
                           pba->q_size_ncdm_bg[n_ncdm],
+                          n_ncdm,
                           M,
                           pba->factor_ncdm[n_ncdm],
                           0.,
@@ -1610,9 +1681,10 @@ int background_ncdm_M_from_Omega(
   for (iter=1; iter<=maxiter; iter++){
 
     /* Newton iteration. First get relevant quantities at M: */
-    background_ncdm_momenta(pba->q_ncdm_bg[n_ncdm],
+    background_ncdm_momenta(pba, pbadist, pba->q_ncdm_bg[n_ncdm],
                             pba->w_ncdm_bg[n_ncdm],
                             pba->q_size_ncdm_bg[n_ncdm],
+                            n_ncdm,
                             M,
                             pba->factor_ncdm[n_ncdm],
                             0.,
@@ -1669,16 +1741,18 @@ int background_solve(
   double tau_end;
   /* an index running over bi indices */
   int i;
-  /* GFA: an index running on integration variables for rho_wdm2 computation */
-  int j;
+  /* GFA: an index running on integration variables for rho_wdm computation */
+//  int j;
   /* GFA: initial value of index j */
-  int j_ini;
-  /* GFA: integration variables needed for rho_wdm2 computation, they store values of a, H and T at each time step */
-  double * a_int;
-  double * H_int;
-  double * t_int;
-  /* GFA: integral appearing in the rho_wdm2 computation */
-  double * integral_rho_wdm2;
+//  int j_ini;
+  /* GFA: integration variables needed for rho_wdm computation, they store values of a, H and T at each time step */
+//  double * a_int;
+//  double * H_int;
+//  double * t_int;
+  /* GFA: integral appearing in the rho_wdm computation */
+//  double * integral_rho_wdm;
+  /* GFA: integral appearing in the p_wdm computation */
+//  double * integral_p_wdm;
   /* GFA: number of time steps */
   int n_steps;
   /* vector of quantities to be integrated */
@@ -1690,19 +1764,19 @@ int background_solve(
   /* comoving radius coordinate in Mpc (equal to conformal distance in flat case) */
   double comoving_radius=0.;
   /* GFA: proper time at the beginning of the decay */
-  double t_ini=0.;
+//  double t_ini=0.;
   /* GFA: auxiliary flag needed to determine t_ini   */
-  short is_a_less_a_ini=_TRUE_;
-  /* GFA: stepsize in scale factor for the integrals appearing in dr2 and wdm2 computation   */
-  double step_a=0.;
-  /* GFA: auxiliary variable, square root appearing in the integrand of the expression for wdm2*/
-  double sqrt_integrand=0.;
-  /* GFA: auxiliary variable, integral needed to compute the equation of state parameter in wdm2 */
-  double * integral_w_wdm2;
-  /* GFA: auxiliary variable, prefactor appearing in the expression for the equation of state parameter in wdm2     */
-  double factor_w_wdm2=0.;
-  /* GFA argument of exponential in wdm2 computation*/
-  double gam;
+//  short is_a_less_a_ini=_TRUE_;
+  /* GFA: stepsize in scale factor for the integrals appearing in wdm computation   */
+//  double step_a=0.;
+  /* GFA: auxiliary variable, square root appearing in the integrand of the expression for wdm*/
+//  double sqrt_integrand=0.;
+  /* GFA: auxiliary variable, integral needed to compute the equation of state parameter in wdm */
+//  double * integral_w_wdm;
+  /* GFA: auxiliary variable, prefactor appearing in the expression for the equation of state parameter in wdm     */
+//  double factor_w_wdm=0.;
+  /* GFA argument of exponential in wdm computation*/
+//  double gam;
 
   bpaw.pba = pba;
   class_alloc(pvecback,pba->bg_size*sizeof(double),pba->error_message);
@@ -1712,11 +1786,14 @@ int background_solve(
   class_alloc(pvecback_integration,pba->bi_size*sizeof(double),pba->error_message);
   n_steps=33/ppr->back_integration_stepsize; /* GFA: approximate empirical relation I found between stepsize of tau and number of time steps  */
   /* We allocate the size of the following vectors */
-  class_alloc(a_int,n_steps*sizeof(double),pba->error_message);
-  class_alloc(H_int,n_steps*sizeof(double),pba->error_message);
-  class_alloc(t_int,n_steps*sizeof(double),pba->error_message);
-  class_alloc(integral_rho_wdm2,n_steps*sizeof(double),pba->error_message);
-  class_alloc(integral_w_wdm2,n_steps*sizeof(double),pba->error_message);
+  class_alloc(pba->H_at_a,n_steps*sizeof(double),pba->error_message);
+  class_alloc(pba->t_at_a,n_steps*sizeof(double),pba->error_message);
+//  class_alloc(a_int,n_steps*sizeof(double),pba->error_message);
+//  class_alloc(H_int,n_steps*sizeof(double),pba->error_message);
+//  class_alloc(t_int,n_steps*sizeof(double),pba->error_message);
+//  class_alloc(integral_rho_wdm,n_steps*sizeof(double),pba->error_message);
+//  class_alloc(integral_w_wdm,n_steps*sizeof(double),pba->error_message);
+//  class_alloc(integral_p_wdm,n_steps*sizeof(double),pba->error_message);
 
   /** - initialize generic integrator with initialize_generic_integrator() */
 
@@ -1743,9 +1820,12 @@ int background_solve(
 
   /* initialize the counter for the number of steps */
   pba->bt_size=0;
-  H_int[pba->bt_size]=pvecback[pba->index_bg_H];
-  a_int[pba->bt_size]=pvecback_integration[pba->index_bi_a];
-  t_int[pba->bt_size]=pvecback_integration[pba->index_bi_time];
+  /* GFA */
+//  H_int[pba->bt_size]=pvecback[pba->index_bg_H];
+//  a_int[pba->bt_size]=pvecback_integration[pba->index_bi_a];
+//  t_int[pba->bt_size]=pvecback_integration[pba->index_bi_time];
+   pba->H_at_a[pba->bt_size]=pvecback[pba->index_bg_H];
+   pba->t_at_a[pba->bt_size]=pvecback_integration[pba->index_bi_time];
 
   /** - loop over integration steps: call background_functions(), find step size, save data in growTable with gt_add(), perform one step with generic_integrator(), store new value of tau */
 
@@ -1790,59 +1870,65 @@ int background_solve(
 
     /* -> store value of tau */
     pvecback_integration[pba->index_bi_tau]=tau_end;
+    /* GFA */
+    pba->H_at_a[pba->bt_size]=pvecback[pba->index_bg_H];
+    pba->t_at_a[pba->bt_size]=pvecback_integration[pba->index_bi_time];
 
 
-    if (pba->has_dcdm2==_TRUE_){
-    /* GFA: compute wdm2 density  */
-    if (pvecback_integration[pba->index_bi_a]<pba->a_ini_dcdm2) {
-      pvecback_integration[pba->index_bi_rho_wdm2]=pba->rho_ini_wdm2;
-      pvecback_integration[pba->index_bi_w_wdm2]=pba->w_ini_wdm2;
+  //  if (pba->has_wdm_daughter==_TRUE_){
+    /* GFA: compute wdm density  */
+  //  if (pvecback_integration[pba->index_bi_a]<pba->a_ini_dcdm2) {
+  //    pvecback_integration[pba->index_bi_rho_wdm]=pba->rho_ini_wdm;
+  //    pvecback_integration[pba->index_bi_w_wdm]=pba->w_ini_wdm;
+    //  pvecback_integration[pba->index_bi_p_wdm_b]=pba->w_ini_wdm*pba->rho_ini_wdm;
     /* GFA: store values of H, a and t  */
-      H_int[pba->bt_size]=pvecback[pba->index_bg_H];
-      a_int[pba->bt_size]=pvecback_integration[pba->index_bi_a];
-      t_int[pba->bt_size]=pvecback_integration[pba->index_bi_time];
-      is_a_less_a_ini=_TRUE_;
-     }  else {
-       if (is_a_less_a_ini==_TRUE_) { /* GFA: Maybe this method for determining t_ini could be improved  */
-         t_ini=t_int[pba->bt_size-1];
-         j_ini=pba->bt_size;
-         is_a_less_a_ini=_FALSE_;
-        }
+  //    H_int[pba->bt_size]=pvecback[pba->index_bg_H];
+  //    a_int[pba->bt_size]=pvecback_integration[pba->index_bi_a];
+  //    t_int[pba->bt_size]=pvecback_integration[pba->index_bi_time];
+  //    is_a_less_a_ini=_TRUE_;
+  //   }  else {
+  //     if (is_a_less_a_ini==_TRUE_) { /* GFA: Maybe this method for determining t_ini could be improved  */
+  //       t_ini=t_int[pba->bt_size-1];
+  //       j_ini=pba->bt_size;
+  //       is_a_less_a_ini=_FALSE_;
+  //      }
       /* GFA: store values of H, a and t  */
-      H_int[pba->bt_size]=pvecback[pba->index_bg_H];
-      a_int[pba->bt_size]=pvecback_integration[pba->index_bi_a];
-      t_int[pba->bt_size]=pvecback_integration[pba->index_bi_time];
+  //    H_int[pba->bt_size]=pvecback[pba->index_bg_H];
+  //    a_int[pba->bt_size]=pvecback_integration[pba->index_bi_a];
+  //    t_int[pba->bt_size]=pvecback_integration[pba->index_bi_time];
       /* GFA: we initialize the integrals */
-      integral_rho_wdm2[pba->bt_size]=pba->integral_rho_wdm2;
-    //  integral_w_wdm2[pba->bt_size]=pba->integral_w_wdm2; /*  GFA: giving this initial condition to the integral was giving problems */
-      integral_w_wdm2[pba->bt_size]=0.0;
-     /* GFA: compute iteratively integral needed for the wdm2 computation (left rectangle rule)*/
-      for (j=j_ini; j<=pba->bt_size; j++) {
-        step_a=a_int[j]-a_int[j-1]; /* GFA: Note that the value of the step in a keeps changing each time, as opposed to the step in tau */
-        sqrt_integrand=sqrt(pow(pba->varepsilon,2.)*pow(a_int[j-1],2.)+(1.-2.*pba->varepsilon)*pow(a_int[pba->bt_size],2.)) ;
-        integral_rho_wdm2[pba->bt_size] += step_a*sqrt_integrand*exp(-pba->Gamma_dcdm2*(t_int[j-1]-t_ini))/(a_int[j-1]*H_int[j-1]); /* GFA: integral in a */
-      //  integral_rho_wdm2[pba->bt_size] += ppr->back_integration_stepsize*sqrt_integrand*exp(-pba->Gamma_dcdm2*(t_int[j-1]-t_ini))/H_int[j-1]; /* GFA: integral in tau  */
-        integral_w_wdm2[pba->bt_size] += step_a*a_int[j-1]*exp(-pba->Gamma_dcdm2*(t_int[j-1]-t_ini))/(H_int[j-1]*(pow(a_int[pba->bt_size],2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2)*pow(a_int[j-1],2))); /* GFA: integral in a  */
-    //    integral_w_wdm2[pba->bt_size] += ppr->back_integration_stepsize*pow(a_int[j-1],2)*exp(-pba->Gamma_dcdm2*(t_int[j-1]-t_ini))/(H_int[j-1]*(pow(a_int[pba->bt_size],2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2)*pow(a_int[j-1],2))); /* GFA: integral in tau  */
-      }
-      // compute rho_wdm2
-      if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method */
-       pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/a_int[pba->bt_size],4)*integral_rho_wdm2[pba->bt_size];
-      } else { /* no shooting method */
-       pvecback_integration[pba->index_bi_rho_wdm2] =pba->Omega0_cdm*pow(pba->H0,2)*pba->Gamma_dcdm2*pow(pba->a_today/a_int[pba->bt_size],4)*integral_rho_wdm2[pba->bt_size];
-      }
-      // compute w_wdm2
-      gam=pba->Gamma_dcdm2*(t_int[pba->bt_size]-t_ini);
-      if (gam < 1.0e-7) {
-      factor_w_wdm2=(1./3.)*pow(pba->varepsilon,2)/(t_int[pba->bt_size]-t_ini);
-      } else {
-      factor_w_wdm2=(1./3.)*pba->Gamma_dcdm2*pow(pba->varepsilon,2)/(1.-exp(-pba->Gamma_dcdm2*(t_int[pba->bt_size]-t_ini)));
-      }
-      pvecback_integration[pba->index_bi_w_wdm2]=factor_w_wdm2*integral_w_wdm2[pba->bt_size];
-    }
-
-   }
-
+  //    integral_rho_wdm[pba->bt_size]=pba->integral_rho_wdm;
+    //  integral_w_wdm[pba->bt_size]=pba->integral_w_wdm; /*  GFA: giving this initial condition to the integral was giving problems */
+  //    integral_w_wdm[pba->bt_size]=0.0;
+  //    integral_p_wdm[pba->bt_size]=0.0;
+     /* GFA: compute iteratively integral needed for the wdm computation (left rectangle rule)*/
+  //    for (j=j_ini; j<=pba->bt_size; j++) {
+  //      step_a=a_int[j]-a_int[j-1]; /* GFA: Note that the value of the step in a keeps changing each time, as opposed to the step in tau */
+  //      sqrt_integrand=sqrt(pow(pba->varepsilon,2.)*pow(a_int[j-1],2.)+(1.-2.*pba->varepsilon)*pow(a_int[pba->bt_size],2.)) ;
+  //      integral_rho_wdm[pba->bt_size] += step_a*sqrt_integrand*exp(-pba->Gamma_dcdm*(t_int[j-1]-t_ini))/(a_int[j-1]*H_int[j-1]); /* GFA: integral in a */
+      //  integral_rho_wdm[pba->bt_size] += ppr->back_integration_stepsize*sqrt_integrand*exp(-pba->Gamma_dcdm*(t_int[j-1]-t_ini))/H_int[j-1]; /* GFA: integral in tau  */
+  //      integral_w_wdm[pba->bt_size] += step_a*a_int[j-1]*exp(-pba->Gamma_dcdm*(t_int[j-1]-t_ini))/(H_int[j-1]*(pow(a_int[pba->bt_size],2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2)*pow(a_int[j-1],2))); /* GFA: integral in a  */
+    //    integral_w_wdm[pba->bt_size] += ppr->back_integration_stepsize*pow(a_int[j-1],2)*exp(-pba->Gamma_dcdm*(t_int[j-1]-t_ini))/(H_int[j-1]*(pow(a_int[pba->bt_size],2)*(1.-2.*pba->varepsilon)+pow(pba->varepsilon,2)*pow(a_int[j-1],2))); /* GFA: integral in tau  */
+  //      integral_p_wdm[pba->bt_size] += step_a*exp(-pba->Gamma_dcdm*(t_int[j-1]-t_ini))/(H_int[j-1]*sqrt_integrand);
+  //    }
+      // compute rho_wdm
+  //    if (pba->Omega0_dcdmdrwdm >0) { /* for shooting method */
+  //     pvecback_integration[pba->index_bi_rho_wdm] =pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm*pow(pba->a_today/a_int[pba->bt_size],4)*integral_rho_wdm[pba->bt_size];
+    //   pvecback_integration[pba->index_bi_p_wdm_b] =pba->Omega_ini_dcdm2*pow(pba->H0,2)*pba->Gamma_dcdm*pow(pba->a_today/a_int[pba->bt_size],4)*(pow(pba->varepsilon,2)/3.0)*integral_p_wdm[pba->bt_size];
+  //    } else { /* no shooting method */
+  //     pvecback_integration[pba->index_bi_rho_wdm] =pba->Omega_ini_dcdm2_noShoot*pow(pba->H0,2)*pba->Gamma_dcdm*pow(pba->a_today/a_int[pba->bt_size],4)*integral_rho_wdm[pba->bt_size];
+    //   pvecback_integration[pba->index_bi_p_wdm_b] =pba->Omega_ini_dcdm2_noShoot*pow(pba->H0,2)*pba->Gamma_dcdm*pow(pba->a_today/a_int[pba->bt_size],4)*(pow(pba->varepsilon,2)/3.0)*integral_p_wdm[pba->bt_size];
+  //    }
+      // compute w_wdm
+  //    gam=pba->Gamma_dcdm*(t_int[pba->bt_size]-t_ini);
+  //    if (gam < 1.0e-7) {
+  //    factor_w_wdm=(1./3.)*pow(pba->varepsilon,2)/(t_int[pba->bt_size]-t_ini);
+  //    } else {
+  //    factor_w_wdm=(1./3.)*pba->Gamma_dcdm*pow(pba->varepsilon,2)/(1.-exp(-pba->Gamma_dcdm*(t_int[pba->bt_size]-t_ini)));
+  //    }
+  //    pvecback_integration[pba->index_bi_w_wdm]=factor_w_wdm*integral_w_wdm[pba->bt_size];
+  //  }
+   //}
 
   }
 
@@ -1897,10 +1983,10 @@ int background_solve(
   }
 
   /* GFA: contribution of decaying dark matter, dark radiation and warm dark matter to the critical density today:   */
-  if (pba->has_dcdm2 ==_TRUE_){
-    pba->Omega0_dcdm2=pvecback_integration[pba->index_bi_rho_dcdm2]/pba->H0/pba->H0;
-    pba->Omega0_dr2=pvecback_integration[pba->index_bi_rho_dr2]/pba->H0/pba->H0;
-    pba->Omega0_wdm2=pvecback_integration[pba->index_bi_rho_wdm2]/pba->H0/pba->H0;
+  if (pba->has_wdm_daughter ==_TRUE_){
+    pba->Omega0_wdm=pvecback_integration[pba->index_bg_rho_ncdm1+pba->N_ncdm-1]/pba->H0/pba->H0;
+  //  pba->Omega0_wdm_r=3.0*pvecback_integration[pba->index_bi_w_wdm]*pvecback_integration[pba->index_bi_rho_wdm]/pba->H0/pba->H0;
+  //  pba->Omega0_wdm_m=pba->Omega0_wdm-pba->Omega0_wdm_r;
   }
 
   /** - allocate background tables */
@@ -2013,13 +2099,13 @@ int background_solve(
              pba->Omega0_dr+pba->Omega0_dcdm,pba->Omega0_dcdmdr);
       printf("     -> Omega_ini_dcdm/Omega_b = %f\n",pba->Omega_ini_dcdm/pba->Omega0_b);
     }
-   if (pba->has_dcdm2==_TRUE_) {  /* GFA */
-     printf("  (Two-body) Decaying Cold Dark Matter details: (DCDM2 --> DR2+WDM2)\n");
-     printf("     -> Omega0_dcdm2 = %f\n",pba->Omega0_dcdm2);
-     printf("     -> Omega0_dr2 = %f\n",pba->Omega0_dr2);
-     printf("     -> Omega0_wdm2 = %f\n",pba->Omega0_wdm2);
-     printf("     -> Omega0_dr2+Omega0_dcdm2+Omega0_wdm2 = %f, input value = %f\n",
-            pba->Omega0_dr2+pba->Omega0_dcdm2+pba->Omega0_wdm2,pba->Omega0_dcdm2dr2wdm2);
+   if ((pba->has_dcdm == _TRUE_)&&(pba->has_dr == _TRUE_)&&(pba->has_wdm_daughter==_TRUE_)) {  /* GFA */
+     printf("  (Two-body) Decaying Cold Dark Matter details: (DCDM --> DR+WDM)\n");
+     printf("     -> Omega0_dcdm = %f\n",pba->Omega0_dcdm);
+     printf("     -> Omega0_dr = %f\n",pba->Omega0_dr);
+     printf("     -> Omega0_wdm = %f\n",pba->Omega0_wdm);
+     printf("     -> Omega0_dr+Omega0_dcdm+Omega0_wdm = %f, input value = %f\n",
+            pba->Omega0_dr+pba->Omega0_dcdm+pba->Omega0_wdm,pba->Omega0_dcdmdrwdm);
      printf("     -> Omega_ini_dcdm2/Omega_b = %f\n",pba->Omega_ini_dcdm2/pba->Omega0_b);
    }
     if (pba->has_scf == _TRUE_){
@@ -2076,7 +2162,7 @@ int background_initial_conditions(
 
   double rho_ncdm, p_ncdm, rho_ncdm_rel_tot=0.;
   double f,Omega_rad, Omega_mat, rho_rad, fvarepsilon_rad,fvarepsilon_mat; /* GFA  */
-  double fdr2_rad, fdr2_mat, fwdm2_rad, fwdm2_mat; /* GFA  */
+  double fdr_rad, fdr_mat, fwdm_rad, fwdm_mat; /* GFA  */
   int counter,is_early_enough,n_ncdm;
   double scf_lambda;
   double rho_fld_today;
@@ -2092,7 +2178,7 @@ int background_initial_conditions(
       than the standard value for the species to be relativistic.
       This could happen for some WDM models.
   */
-
+  if (pba->has_wdm_daughter==_FALSE_) { /*GFA: only do this if there is no wdm ---> change this in the future */
   if (pba->has_ncdm == _TRUE_) {
 
     for (counter=0; counter < _MAX_IT_; counter++) {
@@ -2102,9 +2188,10 @@ int background_initial_conditions(
 
       for (n_ncdm=0; n_ncdm<pba->N_ncdm; n_ncdm++) {
 
-	class_call(background_ncdm_momenta(pba->q_ncdm_bg[n_ncdm],
+	class_call(background_ncdm_momenta(pba, pbadist, pba->q_ncdm_bg[n_ncdm],
 					   pba->w_ncdm_bg[n_ncdm],
 					   pba->q_size_ncdm_bg[n_ncdm],
+             n_ncdm,
 					   pba->M_ncdm[n_ncdm],
 					   pba->factor_ncdm[n_ncdm],
 					   pba->a_today/a-1.0,
@@ -2128,12 +2215,15 @@ int background_initial_conditions(
 	       pba->error_message,
 	       "Search for initial scale factor a such that all ncdm species are relativistic failed.");
   }
-
+ }
   pvecback_integration[pba->index_bi_a] = a;
 
   /* Set initial values of {B} variables: */
   Omega_rad = pba->Omega0_g;
   Omega_mat = pba->Omega0_b;  /* GFA  */
+  if (pba->has_cdm ==_TRUE_) {
+    Omega_mat += pba->Omega0_cdm; /* GFA */
+  }
   if (pba->has_ur == _TRUE_)
     Omega_rad += pba->Omega0_ur;
   rho_rad = Omega_rad*pow(pba->H0,2)/pow(a/pba->a_today,4);
@@ -2142,101 +2232,78 @@ int background_initial_conditions(
     rho_rad += rho_ncdm_rel_tot;
   }
   if (pba->has_dcdm == _TRUE_){
-    /* Remember that the critical density today in CLASS conventions is H0^2 */
-    pvecback_integration[pba->index_bi_rho_dcdm] =pba->Omega_ini_dcdm*pba->H0*pba->H0*pow(pba->a_today/a,3);
-    if (pba->background_verbose > 3)
-      printf("Density is %g. a_today=%g. Omega_ini=%g\n",pvecback_integration[pba->index_bi_rho_dcdm],pba->a_today,pba->Omega_ini_dcdm);
-  }
+    if (pba->has_wdm_daughter==_FALSE_) {
+      /* Remember that the critical density today in CLASS conventions is H0^2 */
+      pvecback_integration[pba->index_bi_rho_dcdm] =pba->Omega_ini_dcdm*pba->H0*pba->H0*pow(pba->a_today/a,3);
+      if (pba->background_verbose > 3)
+        printf("Density is %g. a_today=%g. Omega_ini=%g\n",pvecback_integration[pba->index_bi_rho_dcdm],pba->a_today,pba->Omega_ini_dcdm);
+    if (pba->has_dr == _TRUE_){
+        /**  - f is the critical density fraction of DR. */
+        f = 1./3.*pow(a/pba->a_today,6)*pvecback_integration[pba->index_bi_rho_dcdm]*pba->Gamma_dcdm/pow(pba->H0,3)/sqrt(Omega_rad);
+        pvecback_integration[pba->index_bi_rho_dr] = f*pba->H0*pba->H0/pow(a/pba->a_today,4);
+      }
+    } else { /* GFA  */
+    //  fvarepsilon_rad=(pow(1.-eps,3.)-pow(1.-2.*eps,3./2.))/pow(eps,2.);
+    //  fvarepsilon_mat=0.8*0.5*(1.-eps); //This formula does already a better job, just comes from computing integral with trapezoidal rule, and added a fudge factor of 0.8
+      /* compute initial value of integral for wdm, when decay starts at radiation era (only valid for times much smaller than lifetime) */
+    //  fwdm_rad=(1./3.)*pow(pba->a_ini_dcdm2/pba->a_today,3.)*fvarepsilon_rad/(pba->H0*sqrt(Omega_rad));
 
-  if (pba->has_cdm ==_TRUE_) {
-    Omega_mat += pba->Omega0_cdm; /* GFA */
-  }
-
-
-  if (pba->has_dr == _TRUE_){
-    if (pba->has_dcdm == _TRUE_){
-      /**  - f is the critical density fraction of DR. The exact solution is:
-       *
-        `f = -Omega_rad+pow(pow(Omega_rad,3./2.)+0.5*pow(a/pba->a_today,6)*pvecback_integration[pba->index_bi_rho_dcdm]*pba->Gamma_dcdm/pow(pba->H0,3),2./3.);`
-       *
-       * but it is not numerically stable for very small f which is always the case.
-       * Instead we use the Taylor expansion of this equation, which is equivalent to
-       * ignoring f(a) in the Hubble rate.
-       */
-      f = 1./3.*pow(a/pba->a_today,6)*pvecback_integration[pba->index_bi_rho_dcdm]*pba->Gamma_dcdm/pow(pba->H0,3)/sqrt(Omega_rad);
-      pvecback_integration[pba->index_bi_rho_dr] = f*pba->H0*pba->H0/pow(a/pba->a_today,4);
-      // printf("rho_dr_ini=%e \n",pvecback_integration[pba->index_bi_rho_dr]);
-      // This initial rho_dr is actually quite big, of the order of 10^6 (in units of Mpc^-2)
-      // (but still much smaller than initial rho_tot, of order 10^44 Mpc^-2)
-    }
-    else{
-      /** There is also a space reserved for a future case where dr is not sourced by dcdm */
-      pvecback_integration[pba->index_bi_rho_dr] = 0.0;
-    }
-  }
-
-  /* GFA  */
-  if (pba->has_dcdm2==_TRUE_) {
-      fvarepsilon_rad=(pow(1.-eps,3.)-pow(1.-2.*eps,3./2.))/pow(eps,2.);
-      fvarepsilon_mat=0.8*0.5*(1.-eps); //This formula does already a better job, just comes from computing integral with trapezoidal rule, and added a fudge factor of 0.8
-      /* compute initial value of integral for wdm2, when decay starts at radiation era (only valid for times much smaller than lifetime) */
-      fwdm2_rad=(1./3.)*pow(pba->a_ini_dcdm2/pba->a_today,3.)*fvarepsilon_rad/(pba->H0*sqrt(Omega_rad));
-
-   if (pba->Omega0_dcdm2dr2wdm2 >0) { /* for shooting method  */
-       pvecback_integration[pba->index_bi_rho_dcdm2]=pba->Omega_ini_dcdm2*pow(pba->H0,2)*pow(pba->a_today/a,3);  /* maybe this should include the exponential if decay starts at matter era  */
+   if (pba->Omega0_dcdmdrwdm >0) { /* for shooting method  */
+       pvecback_integration[pba->index_bi_rho_dcdm]=pba->Omega_ini_dcdm2*pow(pba->H0,2)*pow(pba->a_today/a,3);  /* maybe this should include the exponential if decay starts at matter era  */
        Omega_mat += pba->Omega_ini_dcdm2; /* GFA  */
-      /* compute initial value of integral for wdm2, when decay starts at matter era (only valid for times much smaller than lifetime) */
-       fwdm2_mat=pow(pba->a_ini_dcdm2/pba->a_today,5./2.)*fvarepsilon_mat/(pba->H0*sqrt(Omega_mat));
-       /* compute critical density fraction of dr2 in radiation era (only valid for times much smaller than lifetime) */
-       fdr2_rad = (1./3.)*pba->Omega_ini_dcdm2*pba->Gamma_dcdm2*pow(pba->a_ini_dcdm2/pba->a_today,3.)/(pba->H0*sqrt(Omega_rad));
-       /* compute critical density fraction of dr2 in matter era (only valid for times much smaller than lifetime) */
-       fdr2_mat = (2./5.)*pba->Omega_ini_dcdm2*pba->Gamma_dcdm2*pow(pba->a_ini_dcdm2/pba->a_today,5./2.)/(pba->H0*sqrt(Omega_mat));
+      /* compute initial value of integral for wdm, when decay starts at matter era (only valid for times much smaller than lifetime) */
+    //   fwdm_mat=pow(pba->a_ini_dcdm2/pba->a_today,5./2.)*fvarepsilon_mat/(pba->H0*sqrt(Omega_mat));
+       /* compute critical density fraction of dr in radiation era (only valid for times much smaller than lifetime) */
+       fdr_rad = (1./3.)*pba->Omega_ini_dcdm2*pba->Gamma_dcdm*pow(pba->a_ini_dcdm2/pba->a_today,3.)/(pba->H0*sqrt(Omega_rad));
+       /* compute critical density fraction of dr in matter era (only valid for times much smaller than lifetime) */
+       fdr_mat = (2./5.)*pba->Omega_ini_dcdm2*pba->Gamma_dcdm*pow(pba->a_ini_dcdm2/pba->a_today,5./2.)/(pba->H0*sqrt(Omega_mat));
 
        if (pba->a_ini_dcdm2<aeq) { /* GFA: decay starts in rad. era  */
-         pvecback_integration[pba->index_bi_rho_dr2]=fdr2_rad*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
-         pba->integral_rho_wdm2=fwdm2_rad;
-         pba->rho_ini_wdm2=pba->integral_rho_wdm2*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,4);
-         pvecback_integration[pba->index_bi_rho_wdm2]=pba->rho_ini_wdm2;
+         pvecback_integration[pba->index_bi_rho_dr]=fdr_rad*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
+      //   pba->integral_rho_wdm=fwdm_rad;
+      //   pba->rho_ini_wdm=pba->integral_rho_wdm*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*pba->Gamma_dcdm*pow(pba->a_today/pba->a_ini_dcdm2,4);
+      //   pvecback_integration[pba->index_bi_rho_wdm]=pba->rho_ini_wdm;
        } else { /* GFA: decay starts in mat. era  */
-         pvecback_integration[pba->index_bi_rho_dr2]=fdr2_mat*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
-         pba->integral_rho_wdm2=fwdm2_mat;
-         pba->rho_ini_wdm2=pba->integral_rho_wdm2*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,4);
-         pvecback_integration[pba->index_bi_rho_wdm2]=pba->rho_ini_wdm2;
+         pvecback_integration[pba->index_bi_rho_dr]=fdr_mat*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
+      //   pba->integral_rho_wdm=fwdm_mat;
+      //   pba->rho_ini_wdm=pba->integral_rho_wdm*pba->Omega_ini_dcdm2*pow(pba->H0,2.)*pba->Gamma_dcdm*pow(pba->a_today/pba->a_ini_dcdm2,4);
+      //   pvecback_integration[pba->index_bi_rho_wdm]=pba->rho_ini_wdm;
        }
    } else {  /* no shooting method */
-       pvecback_integration[pba->index_bi_rho_dcdm2]=pba->Omega0_cdm*pow(pba->H0,2)*pow(pba->a_today/a,3); /* maybe this should include the exponential if decay starts at matter era  */
-       Omega_mat += pba->Omega0_cdm; /* GFA  */
-       /* compute initial value of integral for wdm2, when decay starts at matter era (only valid for times much smaller than lifetime) */
-       fwdm2_mat=pow(pba->a_ini_dcdm2/pba->a_today,5./2.)*fvarepsilon_mat/(pba->H0*sqrt(Omega_mat));
-       /* compute critical density fraction of dr2 in radiation era (only valid for times much smaller than lifetime) */
-       fdr2_rad = (1./3.)*pba->Omega0_cdm*pba->Gamma_dcdm2*pow(pba->a_ini_dcdm2/pba->a_today,3.)/(pba->H0*sqrt(Omega_rad));
-       /* compute critical density fraction of dr2 in matter era (only valid for times much smaller than lifetime) */
-       fdr2_mat = (2./5.)*pba->Omega0_cdm*pba->Gamma_dcdm2*pow(pba->a_ini_dcdm2/pba->a_today,5./2.)/(pba->H0*sqrt(Omega_mat));
+       pvecback_integration[pba->index_bi_rho_dcdm]=pba->Omega_ini_dcdm2_noShoot*pow(pba->H0,2)*pow(pba->a_today/a,3); /* maybe this should include the exponential if decay starts at matter era  */
+       Omega_mat += pba->Omega_ini_dcdm2_noShoot; /* GFA  */
+       /* compute initial value of integral for wdm, when decay starts at matter era (only valid for times much smaller than lifetime) */
+      // fwdm_mat=pow(pba->a_ini_dcdm2/pba->a_today,5./2.)*fvarepsilon_mat/(pba->H0*sqrt(Omega_mat));
+       /* compute critical density fraction of dr in radiation era (only valid for times much smaller than lifetime) */
+       fdr_rad = (1./3.)*pba->Omega_ini_dcdm2_noShoot*pba->Gamma_dcdm*pow(pba->a_ini_dcdm2/pba->a_today,3.)/(pba->H0*sqrt(Omega_rad));
+       /* compute critical density fraction of dr in matter era (only valid for times much smaller than lifetime) */
+       fdr_mat = (2./5.)*pba->Omega_ini_dcdm2_noShoot*pba->Gamma_dcdm*pow(pba->a_ini_dcdm2/pba->a_today,5./2.)/(pba->H0*sqrt(Omega_mat));
 
        if (pba->a_ini_dcdm2<aeq) { /* GFA: decay starts in rad. era  */
-         pvecback_integration[pba->index_bi_rho_dr2]=fdr2_rad*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
-         pba->integral_rho_wdm2=fwdm2_rad;
-         pba->rho_ini_wdm2=pba->integral_rho_wdm2*pba->Omega0_cdm*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,4);
-         pvecback_integration[pba->index_bi_rho_wdm2]=pba->rho_ini_wdm2;
+         pvecback_integration[pba->index_bi_rho_dr]=fdr_rad*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
+        // pba->integral_rho_wdm=fwdm_rad;
+        // pba->rho_ini_wdm=pba->integral_rho_wdm*pba->Omega_ini_dcdm2_noShoot*pow(pba->H0,2.)*pba->Gamma_dcdm*pow(pba->a_today/pba->a_ini_dcdm2,4);
+         //pvecback_integration[pba->index_bi_rho_wdm]=pba->rho_ini_wdm;
        } else { /* GFA: decay starts in mat. era  */
-         pvecback_integration[pba->index_bi_rho_dr2]=fdr2_mat*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
-         pba->integral_rho_wdm2=fwdm2_mat;
-         pba->rho_ini_wdm2=pba->integral_rho_wdm2*pba->Omega0_cdm*pow(pba->H0,2.)*pba->Gamma_dcdm2*pow(pba->a_today/pba->a_ini_dcdm2,4);
-         pvecback_integration[pba->index_bi_rho_wdm2]=pba->rho_ini_wdm2;
+         pvecback_integration[pba->index_bi_rho_dr]=fdr_mat*pba->varepsilon*pba->H0*pba->H0/pow(pba->a_ini_dcdm2/pba->a_today,4);
+        // pba->integral_rho_wdm=fwdm_mat;
+        // pba->rho_ini_wdm=pba->integral_rho_wdm*pba->Omega_ini_dcdm2_noShoot*pow(pba->H0,2.)*pba->Gamma_dcdm*pow(pba->a_today/pba->a_ini_dcdm2,4);
+        // pvecback_integration[pba->index_bi_rho_wdm]=pba->rho_ini_wdm;
        }
-
    }
-    /* GFA: previous initial values I was using (0.0 for dr2 was giving an error with the generic_integrator )  */
+    /* GFA: previous initial values I was using (0.0 for dr was giving an error with the generic_integrator )  */
     // actually they only worked well for a_ini_dcdm2 corresponding to recombination
-    // pvecback_integration[pba->index_bi_rho_dr2]=1.e-15;
-    // pvecback_integration[pba->index_bi_rho_wdm2]=0.0;
+    // pvecback_integration[pba->index_bi_rho_dr]=1.e-15;
+    // pvecback_integration[pba->index_bi_rho_wdm]=0.0;
 
     /* Following initial condition is only valid for decay starting in radiation era (and for times much smaller than lifetime )  */
-    pba->integral_w_wdm2=(pow(pba->a_ini_dcdm2/pba->a_today,2)/(2.0*pba->H0*sqrt(Omega_rad)*pow(eps,2)))*(1.+(1.-2.*eps)*log((1.-2.*eps)/pow(1.-eps,2))/pow(eps,2));
-    pba->w_ini_wdm2=(1./3.)*2.0*pba->H0*sqrt(Omega_rad)*pow(eps,2)*pow(pba->a_today/pba->a_ini_dcdm2,2)*pba->integral_w_wdm2;
-    /* GFA: This initial condition can still be improved, it does not quite match with the early evolution of w_wdm2 */
-    pvecback_integration[pba->index_bi_w_wdm2]=pba->w_ini_wdm2;
-    /* GFA: I should still need to add some initial condition for w_wdm2 when decays starts during matter era  */
+  //  pba->integral_w_wdm=(pow(pba->a_ini_dcdm2/pba->a_today,2)/(2.0*pba->H0*sqrt(Omega_rad)*pow(eps,2)))*(1.+(1.-2.*eps)*log((1.-2.*eps)/pow(1.-eps,2))/pow(eps,2));
+  //  pba->w_ini_wdm=(1./3.)*2.0*pba->H0*sqrt(Omega_rad)*pow(eps,2)*pow(pba->a_today/pba->a_ini_dcdm2,2)*pba->integral_w_wdm;
+    /* GFA: This initial condition can still be improved, it does not quite match with the early evolution of w_wdm */
+  //  pvecback_integration[pba->index_bi_w_wdm]=pba->w_ini_wdm;
+    /* GFA: I should still need to add some initial condition for w_wdm when decays starts during matter era  */
+  //  pvecback_integration[pba->index_bi_p_wdm_b]=pba->w_ini_wdm*pba->rho_ini_wdm;
+   }
   }
 
 
@@ -2450,10 +2517,10 @@ int background_output_titles(struct background * pba,
   class_store_columntitle(titles,"(.)rho_crit",_TRUE_);
   class_store_columntitle(titles,"(.)rho_dcdm",pba->has_dcdm);
   class_store_columntitle(titles,"(.)rho_dr",pba->has_dr);
-  class_store_columntitle(titles,"(.)rho_dcdm2",pba->has_dcdm2); /* GFA  */
-  class_store_columntitle(titles,"(.)rho_dr2",pba->has_dcdm2);  /* GFA  */
-  class_store_columntitle(titles,"(.)rho_wdm2",pba->has_dcdm2);  /* GFA  */
-  class_store_columntitle(titles,"w_wdm2",pba->has_dcdm2);  /* GFA  */
+//  class_store_columntitle(titles,"(.)rho_wdm",pba->has_wdm_daughter);  /* GFA  */
+//  class_store_columntitle(titles,"w_wdm",pba->has_wdm_daughter);  /* GFA  */
+//  class_store_columntitle(titles,"p_wdm_a",pba->has_wdm_daughter);  /* GFA  */
+//  class_store_columntitle(titles,"p_wdm_b",pba->has_wdm_daughter);  /* GFA  */
 
   class_store_columntitle(titles,"(.)rho_scf",pba->has_scf);
   class_store_columntitle(titles,"(.)p_scf",pba->has_scf);
@@ -2511,10 +2578,10 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_rho_crit],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_dcdm],pba->has_dcdm,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_dr],pba->has_dr,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_rho_dcdm2],pba->has_dcdm2,storeidx); /* GFA  */
-    class_store_double(dataptr,pvecback[pba->index_bg_rho_dr2],pba->has_dcdm2,storeidx); /* GFA  */
-    class_store_double(dataptr,pvecback[pba->index_bg_rho_wdm2],pba->has_dcdm2,storeidx); /* GFA  */
-    class_store_double(dataptr,pvecback[pba->index_bg_w_wdm2],pba->has_dcdm2,storeidx); /* GFA  */
+//    class_store_double(dataptr,pvecback[pba->index_bg_rho_wdm],pba->has_wdm_daughter,storeidx); /* GFA  */
+//    class_store_double(dataptr,pvecback[pba->index_bg_w_wdm],pba->has_wdm_daughter,storeidx); /* GFA  */
+//    class_store_double(dataptr,pvecback[pba->index_bg_p_wdm_a],pba->has_wdm_daughter,storeidx); /* GFA  */
+  //  class_store_double(dataptr,pvecback[pba->index_bg_p_wdm_b],pba->has_wdm_daughter,storeidx); /* GFA  */
 
     class_store_double(dataptr,pvecback[pba->index_bg_rho_scf],pba->has_scf,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_p_scf],pba->has_scf,storeidx);
@@ -2614,36 +2681,36 @@ int background_derivs(
   dy[pba->index_bi_D_prime] = -a*H*y[pba->index_bi_D_prime] + 1.5*a*a*rho_M*y[pba->index_bi_D];
 
   if (pba->has_dcdm == _TRUE_){
-    /** - compute dcdm density \f$ \rho' = -3aH \rho - a \Gamma \rho \f$*/
-    dy[pba->index_bi_rho_dcdm] = -3.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dcdm]-
-      y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
-  }
+    if (pba->has_wdm_daughter == _FALSE_) {
+      /** - compute dcdm density \f$ \rho' = -3aH \rho - a \Gamma \rho \f$*/
+      dy[pba->index_bi_rho_dcdm] = -3.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dcdm]-
+        y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
 
-  if ((pba->has_dcdm == _TRUE_) && (pba->has_dr == _TRUE_)){
-    /** - Compute dr density \f$ \rho' = -4aH \rho + a \Gamma \rho \f$ */
-    dy[pba->index_bi_rho_dr] = -4.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dr]+
-      y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
-    //  0.5*y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];  /* GFA: just add temporary factor of 1/2 to compare both DCDM modules in class  */
-  }
-
-  /* GFA  */
-  if (pba->has_dcdm2 == _TRUE_) {
-    if (a < pba->a_ini_dcdm2) {
-      /* DCDM2, behaves as CDM before a_ini */
-       dy[pba->index_bi_rho_dcdm2]=-3.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dcdm2];
-       /* No DR2 before a_ini */
-       dy[pba->index_bi_rho_dr2]=0.;
-       dy[pba->index_bi_rho_wdm2]=0.;
-       dy[pba->index_bi_w_wdm2]=0.;
-    } else {
-       /* DCDM2 */
-       dy[pba->index_bi_rho_dcdm2] = -3.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dcdm2]-
-       y[pba->index_bi_a]*pba->Gamma_dcdm2*y[pba->index_bi_rho_dcdm2];
-       /* DR2  */
-       dy[pba->index_bi_rho_dr2] = -4.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dr2]+
-       pba->varepsilon*y[pba->index_bi_a]*pba->Gamma_dcdm2*y[pba->index_bi_rho_dcdm2];
-       dy[pba->index_bi_rho_wdm2]=0.;
-       dy[pba->index_bi_w_wdm2]=0.;
+    if (pba->has_dr == _TRUE_){
+      /** - Compute dr density \f$ \rho' = -4aH \rho + a \Gamma \rho \f$ */
+      dy[pba->index_bi_rho_dr] = -4.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dr]+
+        y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
+      }
+    } else { /* GFA  */
+      if (a < pba->a_ini_dcdm2) {
+        /* DCDM, behaves as CDM before a_ini */
+         dy[pba->index_bi_rho_dcdm]=-3.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dcdm];
+         /* No DR before a_ini */
+         dy[pba->index_bi_rho_dr]=0.;
+      //   dy[pba->index_bi_rho_wdm]=0.;
+      //   dy[pba->index_bi_w_wdm]=0.;
+        // dy[pba->index_bi_p_wdm_b]=0.;
+      } else {
+         /* DCDM */
+         dy[pba->index_bi_rho_dcdm] = -3.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dcdm]-
+         y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
+         /* DR  */
+         dy[pba->index_bi_rho_dr] = -4.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dr]+
+         pba->varepsilon*y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
+      //   dy[pba->index_bi_rho_wdm]=0.;
+      //   dy[pba->index_bi_w_wdm]=0.;
+        // dy[pba->index_bi_p_wdm_b]=0.;
+      }
     }
   }
 
@@ -2824,12 +2891,7 @@ int background_output_budget(struct background* pba){
       _class_print_species_("Decaying Dark Matter (dark g)",dcdm);
       budget_matter+=pba->Omega0_dcdm;
     }
-   if (pba->has_dcdm2){
-     _class_print_species_("Decaying DM (2-body)",dcdm2);
-     budget_matter+=pba->Omega0_dcdm2;
-     _class_print_species_("Massive daughter (by decay)",wdm2);
-     budget_matter+=pba->Omega0_wdm2;
-   }
+
 
 
     printf(" ---> Relativistic Species \n");
@@ -2843,10 +2905,7 @@ int background_output_budget(struct background* pba){
       _class_print_species_("Dark Radiation (by decay)",dr);
       budget_radiation+=pba->Omega0_dr;
     }
-    if (pba->has_dcdm2) {
-      _class_print_species_("Massless daughter (by decay)",dr2);
-      budget_radiation+=pba->Omega0_dr2;
-    }
+
 
     if(pba->N_ncdm > 0){
       printf(" ---> Massive Neutrino Species \n");
@@ -2864,6 +2923,10 @@ int background_output_budget(struct background* pba){
     if(pba->has_lambda){
       _class_print_species_("Cosmological Constant",lambda);
       budget_other+=pba->Omega0_lambda;
+    }
+    if (pba->has_wdm_daughter){
+      _class_print_species_("Warm daughter (by decay)",wdm_m);
+      budget_other+=pba->Omega0_wdm;
     }
     if(pba->has_fld){
       _class_print_species_("Dark Energy Fluid",fld);

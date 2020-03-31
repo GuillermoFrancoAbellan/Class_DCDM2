@@ -84,15 +84,15 @@ struct background
 
   double Omega0_dcdmdr; /**< \f$ \Omega_{0 dcdm}+\Omega_{0 dr} \f$: decaying cold dark matter (dcdm) decaying to dark radiation (dr) */
 /* for shooting method */
-  double Omega0_dcdm2dr2wdm2; /**< \f$ GFA: \Omega_{0 dcdm2}+\Omega_{0 dr2}+\Omega_{0 wdm2} \f$: decaying cold dark matter (dcdm2) decaying to dark radiation (dr2) and warm dark matter (wdm2) */
+  double Omega0_dcdmdrwdm; /**< \f$ GFA: \Omega_{0 dcdm}+\Omega_{0 dr}+\Omega_{0 wdm} \f$: decaying cold dark matter (dcdm) decaying to dark radiation (dr) and warm dark matter (wdm) */
 
   double Gamma_dcdm; /**< \f$ \Gamma_{dcdm} \f$: decay constant for decaying cold dark matter */
-
-  double Gamma_dcdm2; /**< GFA: decay constant for two-body decay of dark matter*/
 
   double Omega_ini_dcdm;    /**< \f$ \Omega_{ini,dcdm} \f$: rescaled initial value for dcdm density (see 1407.2418 for definitions) */
 /* for shooting method */
   double Omega_ini_dcdm2;    /**< GFA: \f$ \Omega_{ini,dcdm2} \f$: rescaled initial value for dcdm density (two-body decay) */
+/* with no shooting method */
+  double Omega_ini_dcdm2_noShoot; /**< GFA: \f$ \Omega_{ini,dcdm2} \f$: rescaled initial value for dcdm density (two-body decay) */
 
   double Omega0_scf;        /**< \f$ \Omega_{0 scf} \f$: scalar field */
   short attractor_ic_scf;   /**< whether the scalar field has attractor initial conditions */
@@ -109,6 +109,7 @@ struct background
   double Omega0_k; /**< \f$ \Omega_{0_k} \f$: curvature contribution */
 
   int N_ncdm;                            /**< Number of distinguishable ncdm species */
+  int N_ncdm_no_decay;                     /**< GFA: Number of distinguishable ncdm species that are not the wdm daughter particle*/
   double * M_ncdm;                       /**< vector of masses of non-cold relic:
                                              dimensionless ratios m_ncdm/T_ncdm */
   double * Omega0_ncdm, Omega0_ncdm_tot; /**< Omega0_ncdm for each species and for the total Omega0_ncdm */
@@ -155,14 +156,15 @@ struct background
   double Neff; /**< so-called "effective neutrino number", computed at earliest time in interpolation table */
   double Omega0_dcdm; /**< \f$ \Omega_{0 dcdm} \f$: decaying cold dark matter */
   double Omega0_dr; /**< \f$ \Omega_{0 dr} \f$: decay radiation */
-  /* for shooting method */
-  double Omega0_dcdm2; /**< GFA: \f$ \Omega_{0 dcdm2} \f$: decaying cold dark matter */
-  double Omega0_dr2; /**< GFA: \f$ \Omega_{0 dr2} \f$: decay dark radiation */
-  double Omega0_wdm2; /**< GFA: \f$ \Omega_{0 wdm2} \f$: decay warm dark matter */
+  double Omega0_wdm; /**< GFA: \f$ \Omega_{0 wdm} \f$: decay warm dark matter */
+  double Omega0_wdm_r; /**< GFA: \f$ \Omega_{0 wdm} \f$: decay warm dark matter, contribution to radiation */
+  double Omega0_wdm_m; /**< GFA: \f$ \Omega_{0 wdm} \f$: decay warm dark matter, contribution to matter */
   double Omega0_m;  /**< total non-relativistic matter today */
   double Omega0_r;  /**< total ultra-relativistic radiation today */
   double Omega0_de; /**< total dark energy density today, currently defined as 1 - Omega0_m - Omega0_r - Omega0_k */
   double a_ini_dcdm2; /**< GFA: initial scale factor for the two-body decay of dark matter   */
+  double H_at_a; /**< GFA: for storing the value of H at each time step, needed for wdm computation*/
+  double t_at_a; /**< GFA: for storing the value of t at each time step, needed for wdm computation*/
   double a_eq;      /**< scale factor at radiation/matter equality */
   double H_eq;      /**< Hubble rate at radiation/matter equality [Mpc^-1] */
   double z_eq;      /**< redshift at radiation/matter equality */
@@ -198,11 +200,10 @@ struct background
   int index_bg_rho_ur;        /**< relativistic neutrinos/relics density */
   int index_bg_rho_dcdm;      /**< dcdm density */
   int index_bg_rho_dr;        /**< dr density */
-
-  int index_bg_rho_dcdm2;     /**< GFA: dcdm density (two-body decay) */
-  int index_bg_rho_dr2;       /**< GFA: dr density (two-body decay) */
-  int index_bg_rho_wdm2;      /**< GFA: wdm density (two-body decay)    */
-  int index_bg_w_wdm2;        /**< GFA: wdm equation of state parameter   */
+//  int index_bg_rho_wdm;      /**< GFA: wdm density (two-body decay)    */
+//  int index_bg_w_wdm;        /**< GFA: wdm equation of state (EoS) parameter   */
+//  int index_bg_p_wdm_a;      /**< GFA: wdm pressure (two-body decay), calculated with EoS parameter */
+//  int index_bg_p_wdm_b;      /**< GFA: wdm pressure (two-body decay), calculated with general formula */
 
   int index_bg_phi_scf;       /**< scalar field value */
   int index_bg_phi_prime_scf; /**< scalar field derivative wrt conformal time */
@@ -279,14 +280,13 @@ struct background
   int index_bi_a;       /**< {B} scale factor */
   int index_bi_rho_dcdm;/**< {B} dcdm density */
   int index_bi_rho_dr;  /**< {B} dr density */
-  int index_bi_rho_dcdm2; /**< GFA: {B} dcdm2 density*/
-  int index_bi_rho_dr2;   /**< GFA: {B} dr2 density*/
-  int index_bi_rho_wdm2;  /**< GFA: {B} wdm2 density*/
-  double rho_ini_wdm2;  /**< GFA: {B} initial value of  wdm2 density*/
-  double integral_rho_wdm2; /**< GFA: {B} initial value of integral needed to compute the wdm2 density */
-  double integral_w_wdm2; /**< GFA: {B} initial value of integral needed to compute the wdm2 EoS*/
-  int index_bi_w_wdm2; /**< GFA: {B} equation of state parameter for wdm2   */
-  double w_ini_wdm2;  /**< GFA: {B} initial value of the  EoS parameter for wdm2   */
+//  int index_bi_rho_wdm;  /**< GFA: {B} wdm density*/
+//  int index_bi_p_wdm_b;      /**< GFA: {B} wdm pressure, calculated with general formula */
+//  double rho_ini_wdm;  /**< GFA: {B} initial value of  wdm density*/
+//  double integral_rho_wdm; /**< GFA: {B} initial value of integral needed to compute the wdm density */
+//  double integral_w_wdm; /**< GFA: {B} initial value of integral needed to compute the wdm EoS*/
+//  int index_bi_w_wdm; /**< GFA: {B} equation of state parameter for wdm   */
+//  double w_ini_wdm;  /**< GFA: {B} initial value of the  EoS parameter for wdm   */
   int index_bi_rho_fld; /**< {B} fluid density */
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
@@ -315,7 +315,7 @@ struct background
   short has_cdm;       /**< presence of cold dark matter? */
   short has_dcdm;      /**< presence of decaying cold dark matter? */
   short has_dr;        /**< presence of relativistic decay radiation? */
-  short has_dcdm2;     /**< GFA: presence of decaying cold dark matter (two-body decay)? */
+  short has_wdm_daughter; /**< GFA: presence of warm dark matter daughter (two-body decay)? */
   short has_scf;       /**< presence of a scalar field? */
   short has_ncdm;      /**< presence of non-cold dark matter? */
   short has_lambda;    /**< presence of cosmological constant? */
@@ -474,6 +474,8 @@ extern "C" {
   int background_ncdm_distribution(
 				  void *pba,
 				  double q,
+          double Hubble,
+          double time,
 				  double * f0
 				  );
 
@@ -489,10 +491,12 @@ extern "C" {
 			    );
 
 
-  int background_ncdm_momenta(
+  int background_ncdm_momenta(struct background *pba,
+                              struct background_parameters_for_distributions *pbadist,
                              double * qvec,
                              double * wvec,
                              int qsize,
+                             int n_ncdm,
                              double M,
                              double factor,
                              double z,

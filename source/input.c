@@ -626,6 +626,7 @@ int input_read_parameters(
   int flag1,flag2,flag3;
   double param1,param2,param3;
   int N_ncdm=0,n,entries_read;
+  int N_ncdm_max=0; /* GFA */
   int int1,fileentries;
   double scf_lambda;
   double fnu_factor;
@@ -875,7 +876,12 @@ int input_read_parameters(
   if (flag2 == _TRUE_)
     pba->Omega0_cdm = param2/pba->h/pba->h;
 
-/* GFA: The contribution of cdm to omega_tot is added later  */
+  Omega_tot += pba->Omega0_cdm;
+ /** GFA: only add cdm if there is no dcdm (of any type) */
+//  if (pba->Gamma_dcdm == 0.0 && pba->Gamma_dcdm ==0.0){
+//  Omega_tot += pba->Omega0_cdm;
+//  }
+
   /** - Omega_0_dcdmdr (DCDM) */
   class_call(parser_read_double(pfc,"Omega_dcdmdr",&param1,&flag1,errmsg),
              errmsg,
@@ -929,12 +935,12 @@ int input_read_parameters(
              errmsg,
              "In input file, you can only enter one of Omega_dcdmdrwdm or omega_dcdmdrwdm, choose one");
   if (flag1 == _TRUE_)
-    pba->Omega0_dcdm2dr2wdm2 = param1;
+    pba->Omega0_dcdmdrwdm = param1;
   if (flag2 == _TRUE_)
-    pba->Omega0_dcdm2dr2wdm2 = param2/pba->h/pba->h;
+    pba->Omega0_dcdmdrwdm = param2/pba->h/pba->h;
 
-  if (pba->Omega0_dcdm2dr2wdm2 >0)   {
-   Omega_tot += pba->Omega0_dcdm2dr2wdm2;
+  if (pba->Omega0_dcdmdrwdm >0)   {
+   Omega_tot += pba->Omega0_dcdmdrwdm;
    /** - Read Omega_ini_dcdm2 or omega_ini_dcdm2 */
    class_call(parser_read_double(pfc,"Omega_ini_dcdm2",&param1,&flag1,errmsg),
               errmsg,
@@ -952,21 +958,21 @@ int input_read_parameters(
      pba->Omega_ini_dcdm2 = param2/pba->h/pba->h;
 
   /** GFA: - Read Gamma2 (two-body decay) in same units as H0, i.e. km/(s Mpc)*/
-    class_call(parser_read_double(pfc,"Gamma_dcdm2",&param1,&flag1,errmsg),
+    class_call(parser_read_double(pfc,"Gamma_dcdm",&param1,&flag1,errmsg),
                errmsg,
                errmsg);
-    class_call(parser_read_double(pfc,"Log10_Gamma_dcdm2",&param2,&flag2,errmsg),
+    class_call(parser_read_double(pfc,"Log10_Gamma_dcdm",&param2,&flag2,errmsg),
                errmsg,
                errmsg);
     class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
                errmsg,
-               "In input file, you can only enter one of Gamma_dcdm2 or Log10_Gamma_dcdm2, choose one");
+               "In input file, you can only enter one of Gamma_dcdm or Log10_Gamma_dcdm, choose one");
 
     /* GFA: Convert Gamma to Mpc */
     if (flag1 == _TRUE_)
-      pba->Gamma_dcdm2 = param1*(1.e3 / _c_);
+      pba->Gamma_dcdm = param1*(1.e3 / _c_);
     if (flag2 == _TRUE_)
-      pba->Gamma_dcdm2 = pow(10.,param2)*(1.e3 / _c_);
+      pba->Gamma_dcdm = pow(10.,param2)*(1.e3 / _c_);
 /* GFA: Read initial scale factor for the two-body decay  */
  class_read_double("a_ini_dcdm2",pba->a_ini_dcdm2);
  class_test(pba->a_ini_dcdm2>(pba->a_today/(1.+1089.0)),errmsg,
@@ -991,21 +997,24 @@ int input_read_parameters(
     "The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
 
   } else {    /* no shooting method   */
+
+    /* GFA: Read  Omega_ini_dcdm with no shooting method */
+    class_read_double("Omega_ini_dcdm2_noShoot",pba->Omega_ini_dcdm2_noShoot);
     /** GFA: - Read Gamma2 (two-body decay) in same units as H0, i.e. km/(s Mpc)*/
-    class_call(parser_read_double(pfc,"Gamma_dcdm2",&param1,&flag1,errmsg),
+    class_call(parser_read_double(pfc,"Gamma_dcdm",&param1,&flag1,errmsg),
                errmsg,
                errmsg);
-    class_call(parser_read_double(pfc,"Log10_Gamma_dcdm2",&param2,&flag2,errmsg),
+    class_call(parser_read_double(pfc,"Log10_Gamma_dcdm",&param2,&flag2,errmsg),
                errmsg,
                errmsg);
     class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
                errmsg,
-               "In input file, you can only enter one of Gamma_dcdm2 or Log10_Gamma_dcdm2, choose one");
+               "In input file, you can only enter one of Gamma_dcdm or Log10_Gamma_dcdm, choose one");
     /* GFA: Convert Gamma to Mpc */
       if (flag1 == _TRUE_)
-        pba->Gamma_dcdm2 = param1*(1.e3 / _c_);
+        pba->Gamma_dcdm = param1*(1.e3 / _c_);
       if (flag2 == _TRUE_)
-        pba->Gamma_dcdm2 = pow(10.,param2)*(1.e3 / _c_);
+        pba->Gamma_dcdm = pow(10.,param2)*(1.e3 / _c_);
       /* GFA: Read initial scale factor for the two-body decay  */
     class_read_double("a_ini_dcdm2",pba->a_ini_dcdm2);
     class_test(pba->a_ini_dcdm2>pow(1.+1089.,-1),errmsg,
@@ -1028,15 +1037,9 @@ int input_read_parameters(
 
   class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
     "The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
-    if (pba->Gamma_dcdm2>0) {
-      Omega_tot += pba->Omega0_cdm;
-     }
-  }
-
-
- /** GFA: only add cdm if there is no dcdm (of any type) */
-  if (pba->Gamma_dcdm == 0.0 && pba->Gamma_dcdm2 ==0.0){
-  Omega_tot += pba->Omega0_cdm;
+  //  if (pba->Gamma_dcdm>0) {
+  //    Omega_tot += pba->Omega0_cdm;
+  //   }
   }
 
   /** - non-cold relics (ncdm) */
@@ -1049,35 +1052,53 @@ int input_read_parameters(
     if (ppt->gauge == newtonian)
       ppr->tol_ncdm = ppr->tol_ncdm_newtonian;
 
-    /* Quadrature modes, 0 is qm_auto. */
-    class_read_list_of_integers_or_default("Quadrature strategy",pba->ncdm_quadrature_strategy,0,N_ncdm);
-    /* Number of momentum bins */
-    class_read_list_of_integers_or_default("Number of momentum bins",pba->ncdm_input_q_size,-1,N_ncdm);
 
-    /* qmax, if relevant */
-    class_read_list_of_doubles_or_default("Maximum q",pba->ncdm_qmax,15,N_ncdm);
+    /* GFA: The code is going to treat the wdm daughter particle in a different way than the rest of ncdm species,
+    so we need to specify the number of ncdm species which are not the wdm particle, N_ncdm_no_decay  */
+      if ( (pba->Omega_ini_dcdm2_noShoot != 0.) || (pba->Omega0_dcdmdrwdm != 0.) ) {
+       if (pba->N_ncdm == 1) {
+        pba->N_ncdm_no_decay=0; /* The only ncdm species is the wdm particle */
+       } else {
+        pba->N_ncdm_no_decay=N_ncdm-1; /* We have some standard ncdm species and the wdm particle, which will carry the last ncdm index */
+       }
+      } else {
+       pba->N_ncdm_no_decay=N_ncdm; /* None of the ncdm species is the wdm particle  */
+      }
 
-    /* Read temperatures: */
-    class_read_list_of_doubles_or_default("T_ncdm",pba->T_ncdm,pba->T_ncdm_default,N_ncdm);
+    N_ncdm_max=pba->N_ncdm_no_decay;
 
-    /* Read chemical potentials: */
-    class_read_list_of_doubles_or_default("ksi_ncdm",pba->ksi_ncdm,pba->ksi_ncdm_default,N_ncdm);
+    if (N_ncdm_max > 0) {
+      /* Quadrature modes, 0 is qm_auto. */
+      /* If list of integers (of size N_ncdm) is not read, then each value of list is assigned to a default value of 0 */
+      class_read_list_of_integers_or_default("Quadrature strategy",pba->ncdm_quadrature_strategy,0,N_ncdm_max);
+      /* Number of momentum bins */
+      class_read_list_of_integers_or_default("Number of momentum bins",pba->ncdm_input_q_size,-1,N_ncdm_max);
 
-    /* Read degeneracy of each ncdm species: */
-    class_read_list_of_doubles_or_default("deg_ncdm",pba->deg_ncdm,pba->deg_ncdm_default,N_ncdm);
+      /* qmax, if relevant */
+      class_read_list_of_doubles_or_default("Maximum q",pba->ncdm_qmax,15,N_ncdm_max);
 
-    /* Read mass of each ncdm species: */
-    class_read_list_of_doubles_or_default("m_ncdm",pba->m_ncdm_in_eV,0.0,N_ncdm);
+      /* Read temperatures: */
+      class_read_list_of_doubles_or_default("T_ncdm",pba->T_ncdm,pba->T_ncdm_default,N_ncdm_max);
 
-    /* Read Omega of each ncdm species: */
-    class_read_list_of_doubles_or_default("Omega_ncdm",pba->Omega0_ncdm,0.0,N_ncdm);
+      /* Read chemical potentials: */
+      class_read_list_of_doubles_or_default("ksi_ncdm",pba->ksi_ncdm,pba->ksi_ncdm_default,N_ncdm_max);
 
-    /* Read omega of each ncdm species: (Use pba->M_ncdm temporarily)*/
-    class_read_list_of_doubles_or_default("omega_ncdm",pba->M_ncdm,0.0,N_ncdm);
+      /* Read degeneracy of each ncdm species: */
+      class_read_list_of_doubles_or_default("deg_ncdm",pba->deg_ncdm,pba->deg_ncdm_default,N_ncdm_max);
+
+      /* Read mass of each ncdm species: */
+      class_read_list_of_doubles_or_default("m_ncdm",pba->m_ncdm_in_eV,0.0,N_ncdm_max);
+
+      /* Read Omega of each ncdm species: */
+      class_read_list_of_doubles_or_default("Omega_ncdm",pba->Omega0_ncdm,0.0,N_ncdm_max);
+
+      /* Read omega of each ncdm species: (Use pba->M_ncdm temporarily)*/
+      class_read_list_of_doubles_or_default("omega_ncdm",pba->M_ncdm,0.0,N_ncdm_max);
+
 
     /* Check for duplicate Omega/omega entries, missing mass definition and
        update pba->Omega0_ncdm:*/
-    for(n=0; n<N_ncdm; n++){
+    for(n=0; n<N_ncdm_max; n++){
       /* pba->M_ncdm holds value of omega */
       if (pba->M_ncdm[n]!=0.0){
         class_test(pba->Omega0_ncdm[n]!=0,errmsg,
@@ -1096,10 +1117,11 @@ int input_read_parameters(
     }
 
     /* Check if filenames for interpolation tables are given: */
-    class_read_list_of_integers_or_default("use_ncdm_psd_files",pba->got_files,_FALSE_,N_ncdm);
+    class_read_list_of_integers_or_default("use_ncdm_psd_files",pba->got_files,_FALSE_,N_ncdm_max);
+
 
     if (flag1==_TRUE_){
-      for(n=0,fileentries=0; n<N_ncdm; n++){
+      for(n=0,fileentries=0; n<N_ncdm_max; n++){
         if (pba->got_files[n] == _TRUE_) fileentries++;
       }
 
@@ -1117,6 +1139,8 @@ int input_read_parameters(
                    entries_read,fileentries);
       }
     }
+
+
     /* Read (optional) p.s.d.-parameters:*/
     parser_read_list_of_doubles(pfc,
                                 "ncdm_psd_parameters",
@@ -1124,21 +1148,25 @@ int input_read_parameters(
                                 &(pba->ncdm_psd_parameters),
                                 &flag2,
                                 errmsg);
+    } /* end of if (N_ncdm_max > 0)  */
 
     class_call(background_ncdm_init(ppr,pba),
                pba->error_message,
                errmsg);
 
+
+    if (N_ncdm_max > 0) {
+
     /* We must calculate M from omega or vice versa if one of them is missing.
        If both are present, we must update the degeneracy parameter to
        reflect the implicit normalization of the distribution function.*/
-    for (n=0; n < N_ncdm; n++){
+    for (n=0; n < N_ncdm_max; n++){
       if (pba->m_ncdm_in_eV[n] != 0.0){
         /* Case of only mass or mass and Omega/omega: */
         pba->M_ncdm[n] = pba->m_ncdm_in_eV[n]/_k_B_*_eV_/pba->T_ncdm[n]/pba->T_cmb;
-        class_call(background_ncdm_momenta(pba->q_ncdm_bg[n],
+        class_call(background_ncdm_momenta(pba, pbadist, pba->q_ncdm_bg[n],
                                            pba->w_ncdm_bg[n],
-                                           pba->q_size_ncdm_bg[n],
+                                           pba->q_size_ncdm_bg[n], n,
                                            pba->M_ncdm[n],
                                            pba->factor_ncdm[n],
                                            0.,
@@ -1173,8 +1201,13 @@ int input_read_parameters(
       pba->Omega0_ncdm_tot += pba->Omega0_ncdm[n];
       //printf("Adding %g to total Omega..\n",pba->Omega0_ncdm[n]);
     }
-  }
+
+  }  /* end of if (N_ncdm_max > 0)  */
+
+ } /* end of if ((flag1 == _TRUE_) && (N_ncdm > 0)) */
+
   Omega_tot += pba->Omega0_ncdm_tot;
+ /* GFA: Note that the wdm contribution is not added here, since it was already included in pba->Omega0_dcdmdrwdm */
 
   /** - Omega_0_k (effective fractional density of curvature) */
   class_read_double("Omega_k",pba->Omega0_k);
@@ -3091,12 +3124,13 @@ pba->Omega0_ur = 3.046*7./8.*pow(4./11.,4./3.)*pba->Omega0_g;
 pba->Omega0_b = 0.022032/pow(pba->h,2);
 pba->Omega0_cdm = 0.12038/pow(pba->h,2);
 pba->Omega0_dcdmdr = 0.0;
-pba->Omega0_dcdm2dr2wdm2=0.0; /* GFA, for shooting method */
+pba->Omega0_dcdmdrwdm=0.0; /* GFA, with shooting method */
+pba->Omega_ini_dcdm2_noShoot=0.0; /* GFA, with no shooting method */
 pba->Omega0_dcdm = 0.0;
 pba->Gamma_dcdm = 0.0;
-pba->Gamma_dcdm2 = 0.0; /* GFA */
 pba->varepsilon=0.45;   /* GFA */
 pba->N_ncdm = 0;
+pba->N_ncdm_no_decay=0; /* GFA */
 pba->Omega0_ncdm_tot = 0.;
 pba->ksi_ncdm_default = 0.;
 pba->ksi_ncdm = NULL;
@@ -3560,7 +3594,7 @@ struct output op;           /* for output files */
 
 int i;
 double rho_dcdm_today, rho_dr_today;
-double rho_dcdm2_today, rho_dr2_today, rho_wdm2_today; /* GFA  */
+double rho_wdm_today; /* GFA  */
 struct fzerofun_workspace * pfzw;
 int input_verbose;
 int flag;
@@ -3742,16 +3776,16 @@ case omega_dcdmdr:
   output[i] = (rho_dcdm_today+rho_dr_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;
   break;
  case Omega_dcdmdrwdm:  /* GFA*/
-  rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
-  rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
-  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
-  output[i] = (rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)-pfzw->target_value[i];
+  rho_dcdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm];
+  rho_dr_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr];
+  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_ncdm1+ba.N_ncdm-1];
+  output[i] = (rho_dcdm_today+rho_dr_today+rho_wdm_today)/(ba.H0*ba.H0)-pfzw->target_value[i];
   break;
  case omega_dcdmdrwdm: /* GFA*/
-  rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
-  rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
-  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
-  output[i] = (rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;;
+  rho_dcdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm];
+  rho_dr_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr];
+  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_ncdm1+ba.N_ncdm-1];
+  output[i] = (rho_dcdm_today+rho_dr_today+rho_wdm_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;;
   break;
 case Omega_scf:
   /** - In case scalar field is used to fill, pba->Omega0_scf is not equal to pfzw->target_value[i].*/
@@ -3769,10 +3803,10 @@ case omega_ini_dcdm:
   break;
 case Omega_ini_dcdm2: /*GFA */
 case omega_ini_dcdm2:
-  rho_dcdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm2];
-  rho_dr2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr2];
-  rho_wdm2_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm2];
-  output[i]=-(rho_dcdm2_today+rho_dr2_today+rho_wdm2_today)/(ba.H0*ba.H0)+ba.Omega0_dcdm2dr2wdm2;
+  rho_dcdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm];
+  rho_dr_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr];
+  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_ncdm1+ba.N_ncdm-1];
+  output[i]=-(rho_dcdm_today+rho_dr_today+rho_wdm_today)/(ba.H0*ba.H0)+ba.Omega0_dcdmdrwdm;
   break;
 case sigma8:
   output[i] = nl.sigma8[nl.index_pk_m]-pfzw->target_value[i];
@@ -3831,7 +3865,7 @@ struct output op;           /* for output files */
 int i;
 
 double Omega_M, a_decay, gamma, Omega0_dcdmdr=1.0;
- double Omega0_dcdm2dr2wdm2=1.0; /*GFA */
+ double Omega0_dcdmdrwdm=1.0; /*GFA */
 int index_guess;
 
 /* Cheat to read only known parameters: */
@@ -3883,8 +3917,8 @@ case theta_s:
   ba.H0 = ba.h *  1.e5 / _c_;
   break;
 case Omega_dcdmdr:
-  // Omega_M = ba.Omega0_cdm+ba.Omega0_dcdmdr+ba.Omega0_b;
-   Omega_M =ba.Omega0_dcdmdr+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+   Omega_M = ba.Omega0_cdm+ba.Omega0_dcdmdr+ba.Omega0_b;
+  // Omega_M =ba.Omega0_dcdmdr+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
   /* This formula is exact in a Matter + Lambda Universe, but only
      for Omega_dcdm, not the combined.
      sqrt_one_minus_M = sqrt(1.0 - Omega_M);
@@ -3903,8 +3937,8 @@ case Omega_dcdmdr:
   //printf("x = Omega_ini_guess = %g, dxdy = %g\n",*xguess,*dxdy);
   break;
 case omega_dcdmdr:
-  // Omega_M = ba.Omega0_cdm+ba.Omega0_dcdmdr+ba.Omega0_b;
-  Omega_M =ba.Omega0_dcdmdr+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+   Omega_M = ba.Omega0_cdm+ba.Omega0_dcdmdr+ba.Omega0_b;
+//  Omega_M =ba.Omega0_dcdmdr+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
   /* This formula is exact in a Matter + Lambda Universe, but only
      for Omega_dcdm, not the combined.
      sqrt_one_minus_M = sqrt(1.0 - Omega_M);
@@ -3924,8 +3958,9 @@ case omega_dcdmdr:
   break;
 
  case Omega_dcdmdrwdm: /* GFA */
-   Omega_M =ba.Omega0_dcdm2dr2wdm2+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
-   gamma = ba.Gamma_dcdm2/ba.H0;
+  // Omega_M =ba.Omega0_dcdmdrwdm+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+   Omega_M =ba.Omega0_dcdmdrwdm+ba.Omega0_b+ba.Omega0_cdm; /* GFA  */
+   gamma = ba.Gamma_dcdm/ba.H0;
   if (gamma < 1)
     a_decay = 1.0;
   else
@@ -3935,8 +3970,9 @@ case omega_dcdmdr:
   break;
 
  case omega_dcdmdrwdm: /* GFA */
-   Omega_M =ba.Omega0_dcdm2dr2wdm2+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
-   gamma = ba.Gamma_dcdm2/ba.H0;
+//   Omega_M =ba.Omega0_dcdmdrwdm+ba.Omega0_b; /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+   Omega_M =ba.Omega0_dcdmdrwdm+ba.Omega0_b+ba.Omega0_cdm; /* GFA  */
+   gamma = ba.Gamma_dcdm/ba.H0;
  if (gamma < 1)
     a_decay = 1.0;
  else
@@ -3971,8 +4007,8 @@ case Omega_ini_dcdm:
       Omega_ini_dcdm -> Omega_dcdmdr and
       omega_ini_dcdm -> omega_dcdmdr */
   Omega0_dcdmdr *=pfzw->target_value[index_guess];
-//  Omega_M = ba.Omega0_cdm+Omega0_dcdmdr+ba.Omega0_b;
-  Omega_M = Omega0_dcdmdr+ba.Omega0_b;  /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+  Omega_M = ba.Omega0_cdm+Omega0_dcdmdr+ba.Omega0_b;
+//  Omega_M = Omega0_dcdmdr+ba.Omega0_b;  /* GFA: I imposed that we cannot have both cdm and dcdm components  */
   gamma = ba.Gamma_dcdm/ba.H0;
   if (gamma < 1)
     a_decay = 1.0;
@@ -3984,14 +4020,14 @@ case Omega_ini_dcdm:
     dxdy[index_guess] *= gamma/100;
   break;
 case omega_ini_dcdm2:
-  Omega0_dcdm2dr2wdm2 = 1./(ba.h*ba.h);
+  Omega0_dcdmdrwdm = 1./(ba.h*ba.h);
 case Omega_ini_dcdm2:
     /** - This works since correspondence is
         Omega_ini_dcdm2 -> Omega_dcdmdrwdm and
         omega_ini_dcdm2 -> omega_dcdmdrwdm */
-  Omega0_dcdm2dr2wdm2*=pfzw->target_value[index_guess];
-  Omega_M = Omega0_dcdm2dr2wdm2+ba.Omega0_b;  /* GFA: I imposed that we cannot have both cdm and dcdm components  */
-  gamma = ba.Gamma_dcdm2/ba.H0;
+  Omega0_dcdmdrwdm*=pfzw->target_value[index_guess];
+  Omega_M = Omega0_dcdmdrwdm+ba.Omega0_b;  /* GFA: I imposed that we cannot have both cdm and dcdm components  */
+  gamma = ba.Gamma_dcdm/ba.H0;
   if (gamma < 1)
      a_decay = 1.0;
   else
