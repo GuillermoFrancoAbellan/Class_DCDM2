@@ -626,7 +626,7 @@ int input_read_parameters(
   int flag1,flag2,flag3;
   double param1,param2,param3;
   int N_ncdm=0,n,entries_read;
-  int N_ncdm_max=0; /* GFA */
+//  int N_ncdm_max=0; /* GFA, for wdm computation as NCDM species */
   int int1,fileentries;
   double scf_lambda;
   double fnu_factor;
@@ -877,10 +877,6 @@ int input_read_parameters(
     pba->Omega0_cdm = param2/pba->h/pba->h;
 
   Omega_tot += pba->Omega0_cdm;
- /** GFA: only add cdm if there is no dcdm (of any type) */
-//  if (pba->Gamma_dcdm == 0.0 && pba->Gamma_dcdm ==0.0){
-//  Omega_tot += pba->Omega0_cdm;
-//  }
 
   /** - Omega_0_dcdmdr (DCDM) */
   class_call(parser_read_double(pfc,"Omega_dcdmdr",&param1,&flag1,errmsg),
@@ -978,7 +974,6 @@ int input_read_parameters(
  class_test(pba->a_ini_dcdm2>(pba->a_today/(1.+1089.0)),errmsg,
  "The value that you chose for the initial scale factor of the two-body decay, %e, is too big", pba->a_ini_dcdm2);
     /** GFA: - Read varepsilon (two-body decay)   */
-  //  class_read_double("varepsilon",pba->varepsilon);
   class_call(parser_read_double(pfc,"varepsilon",&param1,&flag1,errmsg),
              errmsg,
              errmsg);
@@ -1020,7 +1015,6 @@ int input_read_parameters(
     class_test(pba->a_ini_dcdm2>pow(1.+1089.,-1),errmsg,
     "The value that you chose for the initial scale factor of the two-body decay, %e, is too big", pba->a_ini_dcdm2);
       /** GFA: - Read varepsilon (two-body decay)   */
-  //  class_read_double("varepsilon",pba->varepsilon);
   class_call(parser_read_double(pfc,"varepsilon",&param1,&flag1,errmsg),
              errmsg,
              errmsg);
@@ -1037,9 +1031,7 @@ int input_read_parameters(
 
   class_test(((pba->varepsilon >= 0.5) || (pba->varepsilon <= 0.0)),errmsg,
     "The fraction of energy deposited into the massless daughter, %f, must lie between 0 and 0.5 in order to respect kinematics ", pba->varepsilon);
-  //  if (pba->Gamma_dcdm>0) {
-  //    Omega_tot += pba->Omega0_cdm;
-  //   }
+
   }
 
   /** - non-cold relics (ncdm) */
@@ -1053,52 +1045,66 @@ int input_read_parameters(
       ppr->tol_ncdm = ppr->tol_ncdm_newtonian;
 
 
+
+//////////// FOR IMPLEMENTATION OF WDM AS NCDM SPECIES //////////////////////////////
     /* GFA: The code is going to treat the wdm daughter particle in a different way than the rest of ncdm species,
     so we need to specify the number of ncdm species which are not the wdm particle, N_ncdm_no_decay  */
-      if ( (pba->Omega_ini_dcdm2_noShoot != 0.) || (pba->Omega0_dcdmdrwdm != 0.) ) {
-       if (pba->N_ncdm == 1) {
-        pba->N_ncdm_no_decay=0; /* The only ncdm species is the wdm particle */
-       } else {
-        pba->N_ncdm_no_decay=N_ncdm-1; /* We have some standard ncdm species and the wdm particle, which will carry the last ncdm index */
-       }
-      } else {
-       pba->N_ncdm_no_decay=N_ncdm; /* None of the ncdm species is the wdm particle  */
-      }
+//      if ( (pba->Omega_ini_dcdm2_noShoot != 0.) || (pba->Omega0_dcdmdrwdm != 0.) || ( pba->Omega_ini_dcdm2!= 0.)  ) {
+//       if (pba->N_ncdm == 1) {
+//        pba->N_ncdm_no_decay=0; /* The only ncdm species is the wdm particle */
+//       } else {
+//        pba->N_ncdm_no_decay=N_ncdm-1; /* We have some standard ncdm species and the wdm particle, which will carry the last ncdm index */
+//       }
+//      } else {
+//       pba->N_ncdm_no_decay=N_ncdm; /* None of the ncdm species is the wdm particle  */
+//      }
+//    pba->N_ncdm_no_decay=N_ncdm;
+//    N_ncdm_max=pba->N_ncdm_no_decay;
+//    printf("N_ncdm_max=%d \n", N_ncdm_max);
 
-    N_ncdm_max=pba->N_ncdm_no_decay;
-
-    if (N_ncdm_max > 0) {
+//    if (N_ncdm_max > 0) {  /* GFA: everything below is only done for ncdm species which are not wdm */
       /* Quadrature modes, 0 is qm_auto. */
       /* If list of integers (of size N_ncdm) is not read, then each value of list is assigned to a default value of 0 */
-      class_read_list_of_integers_or_default("Quadrature strategy",pba->ncdm_quadrature_strategy,0,N_ncdm_max);
+      class_read_list_of_integers_or_default("Quadrature strategy",pba->ncdm_quadrature_strategy,0,N_ncdm);
+    //  class_read_list_of_integers_or_default("Quadrature strategy",pba->ncdm_quadrature_strategy,0,N_ncdm_max);
       /* Number of momentum bins */
-      class_read_list_of_integers_or_default("Number of momentum bins",pba->ncdm_input_q_size,-1,N_ncdm_max);
+      class_read_list_of_integers_or_default("Number of momentum bins",pba->ncdm_input_q_size,-1,N_ncdm);
+    //  class_read_list_of_integers_or_default("Number of momentum bins",pba->ncdm_input_q_size,-1,N_ncdm_max);
 
       /* qmax, if relevant */
-      class_read_list_of_doubles_or_default("Maximum q",pba->ncdm_qmax,15,N_ncdm_max);
+      class_read_list_of_doubles_or_default("Maximum q",pba->ncdm_qmax,15,N_ncdm);
+    //  class_read_list_of_doubles_or_default("Maximum q",pba->ncdm_qmax,15,N_ncdm_max);
 
       /* Read temperatures: */
-      class_read_list_of_doubles_or_default("T_ncdm",pba->T_ncdm,pba->T_ncdm_default,N_ncdm_max);
+      class_read_list_of_doubles_or_default("T_ncdm",pba->T_ncdm,pba->T_ncdm_default,N_ncdm);
+  //    class_read_list_of_doubles_or_default("T_ncdm",pba->T_ncdm,pba->T_ncdm_default,N_ncdm_max);
 
       /* Read chemical potentials: */
-      class_read_list_of_doubles_or_default("ksi_ncdm",pba->ksi_ncdm,pba->ksi_ncdm_default,N_ncdm_max);
+      class_read_list_of_doubles_or_default("ksi_ncdm",pba->ksi_ncdm,pba->ksi_ncdm_default,N_ncdm);
+  //    class_read_list_of_doubles_or_default("ksi_ncdm",pba->ksi_ncdm,pba->ksi_ncdm_default,N_ncdm_max);
 
       /* Read degeneracy of each ncdm species: */
-      class_read_list_of_doubles_or_default("deg_ncdm",pba->deg_ncdm,pba->deg_ncdm_default,N_ncdm_max);
+      class_read_list_of_doubles_or_default("deg_ncdm",pba->deg_ncdm,pba->deg_ncdm_default,N_ncdm);
+  //    class_read_list_of_doubles_or_default("deg_ncdm",pba->deg_ncdm,pba->deg_ncdm_default,N_ncdm_max);
 
       /* Read mass of each ncdm species: */
-      class_read_list_of_doubles_or_default("m_ncdm",pba->m_ncdm_in_eV,0.0,N_ncdm_max);
+      class_read_list_of_doubles_or_default("m_ncdm",pba->m_ncdm_in_eV,0.0,N_ncdm);
+  //    class_read_list_of_doubles_or_default("m_ncdm",pba->m_ncdm_in_eV,0.0,N_ncdm_max);
 
       /* Read Omega of each ncdm species: */
-      class_read_list_of_doubles_or_default("Omega_ncdm",pba->Omega0_ncdm,0.0,N_ncdm_max);
+      class_read_list_of_doubles_or_default("Omega_ncdm",pba->Omega0_ncdm,0.0,N_ncdm);
+  //    class_read_list_of_doubles_or_default("Omega_ncdm",pba->Omega0_ncdm,0.0,N_ncdm_max);
 
       /* Read omega of each ncdm species: (Use pba->M_ncdm temporarily)*/
-      class_read_list_of_doubles_or_default("omega_ncdm",pba->M_ncdm,0.0,N_ncdm_max);
+      class_read_list_of_doubles_or_default("omega_ncdm",pba->M_ncdm,0.0,N_ncdm);
+  //    class_read_list_of_doubles_or_default("omega_ncdm",pba->M_ncdm,0.0,N_ncdm_max);
 
 
     /* Check for duplicate Omega/omega entries, missing mass definition and
        update pba->Omega0_ncdm:*/
-    for(n=0; n<N_ncdm_max; n++){
+
+  //  for(n=0; n<N_ncdm_max; n++){
+    for(n=0; n<N_ncdm; n++){
       /* pba->M_ncdm holds value of omega */
       if (pba->M_ncdm[n]!=0.0){
         class_test(pba->Omega0_ncdm[n]!=0,errmsg,
@@ -1117,11 +1123,13 @@ int input_read_parameters(
     }
 
     /* Check if filenames for interpolation tables are given: */
-    class_read_list_of_integers_or_default("use_ncdm_psd_files",pba->got_files,_FALSE_,N_ncdm_max);
+    class_read_list_of_integers_or_default("use_ncdm_psd_files",pba->got_files,_FALSE_,N_ncdm);
+  //  class_read_list_of_integers_or_default("use_ncdm_psd_files",pba->got_files,_FALSE_,N_ncdm_max);
 
 
     if (flag1==_TRUE_){
-      for(n=0,fileentries=0; n<N_ncdm_max; n++){
+      for(n=0,fileentries=0; n<N_ncdm; n++){
+    //  for(n=0,fileentries=0; n<N_ncdm_max; n++){
         if (pba->got_files[n] == _TRUE_) fileentries++;
       }
 
@@ -1148,25 +1156,27 @@ int input_read_parameters(
                                 &(pba->ncdm_psd_parameters),
                                 &flag2,
                                 errmsg);
-    } /* end of if (N_ncdm_max > 0)  */
+  //  } /* end of if (N_ncdm_max > 0)  */
 
     class_call(background_ncdm_init(ppr,pba),
                pba->error_message,
                errmsg);
 
 
-    if (N_ncdm_max > 0) {
-
+//    if (N_ncdm_max > 0) { /* GFA: everything below is only done for ncdm species which are not wdm */
     /* We must calculate M from omega or vice versa if one of them is missing.
        If both are present, we must update the degeneracy parameter to
        reflect the implicit normalization of the distribution function.*/
-    for (n=0; n < N_ncdm_max; n++){
+  //  for (n=0; n < N_ncdm_max; n++){ /* GFA: everything below is only done for ncdm species which are not wdm */
+    for (n=0; n < N_ncdm; n++){
       if (pba->m_ncdm_in_eV[n] != 0.0){
         /* Case of only mass or mass and Omega/omega: */
         pba->M_ncdm[n] = pba->m_ncdm_in_eV[n]/_k_B_*_eV_/pba->T_ncdm[n]/pba->T_cmb;
-        class_call(background_ncdm_momenta(pba, pbadist, pba->q_ncdm_bg[n],
+        class_call(background_ncdm_momenta(pba,
+                                           pba->q_ncdm_bg[n],
                                            pba->w_ncdm_bg[n],
-                                           pba->q_size_ncdm_bg[n], n,
+                                           pba->q_size_ncdm_bg[n],
+                                           n,
                                            pba->M_ncdm[n],
                                            pba->factor_ncdm[n],
                                            0.,
@@ -1195,14 +1205,12 @@ int input_read_parameters(
         class_call(background_ncdm_M_from_Omega(ppr,pba,n),
                    pba->error_message,
                    errmsg);
-        //printf("M_ncdm:%g\n",pba->M_ncdm[n]);
         pba->m_ncdm_in_eV[n] = _k_B_/_eV_*pba->T_ncdm[n]*pba->M_ncdm[n]*pba->T_cmb;
       }
       pba->Omega0_ncdm_tot += pba->Omega0_ncdm[n];
-      //printf("Adding %g to total Omega..\n",pba->Omega0_ncdm[n]);
     }
 
-  }  /* end of if (N_ncdm_max > 0)  */
+//  }  /* end of if (N_ncdm_max > 0)  */
 
  } /* end of if ((flag1 == _TRUE_) && (N_ncdm > 0)) */
 
@@ -3130,7 +3138,7 @@ pba->Omega0_dcdm = 0.0;
 pba->Gamma_dcdm = 0.0;
 pba->varepsilon=0.45;   /* GFA */
 pba->N_ncdm = 0;
-pba->N_ncdm_no_decay=0; /* GFA */
+// pba->N_ncdm_no_decay=0; /* GFA, for implementation of wdm as ncdm species*/
 pba->Omega0_ncdm_tot = 0.;
 pba->ksi_ncdm_default = 0.;
 pba->ksi_ncdm = NULL;
@@ -3775,17 +3783,19 @@ case omega_dcdmdr:
     rho_dr_today = 0.;
   output[i] = (rho_dcdm_today+rho_dr_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;
   break;
- case Omega_dcdmdrwdm:  /* GFA*/
+case Omega_dcdmdrwdm:  /* GFA*/
   rho_dcdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm];
   rho_dr_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr];
-  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_ncdm1+ba.N_ncdm-1];
+//  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_ncdm1+ba.N_ncdm-1]; /* for implementation of WDM as NCDM species  */
+  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm];
   output[i] = (rho_dcdm_today+rho_dr_today+rho_wdm_today)/(ba.H0*ba.H0)-pfzw->target_value[i];
   break;
- case omega_dcdmdrwdm: /* GFA*/
+case omega_dcdmdrwdm: /* GFA*/
   rho_dcdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm];
   rho_dr_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr];
-  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_ncdm1+ba.N_ncdm-1];
-  output[i] = (rho_dcdm_today+rho_dr_today+rho_wdm_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;;
+//  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_ncdm1+ba.N_ncdm-1]; /* for implementation of WDM as NCDM species  */
+  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm];
+  output[i] = (rho_dcdm_today+rho_dr_today+rho_wdm_today)/(ba.H0*ba.H0)-pfzw->target_value[i]/ba.h/ba.h;
   break;
 case Omega_scf:
   /** - In case scalar field is used to fill, pba->Omega0_scf is not equal to pfzw->target_value[i].*/
@@ -3805,7 +3815,8 @@ case Omega_ini_dcdm2: /*GFA */
 case omega_ini_dcdm2:
   rho_dcdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm];
   rho_dr_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dr];
-  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_ncdm1+ba.N_ncdm-1];
+//  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_ncdm1+ba.N_ncdm-1];  /* for implementation of WDM as NCDM species  */
+  rho_wdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_wdm];
   output[i]=-(rho_dcdm_today+rho_dr_today+rho_wdm_today)/(ba.H0*ba.H0)+ba.Omega0_dcdmdrwdm;
   break;
 case sigma8:
@@ -3865,7 +3876,7 @@ struct output op;           /* for output files */
 int i;
 
 double Omega_M, a_decay, gamma, Omega0_dcdmdr=1.0;
- double Omega0_dcdmdrwdm=1.0; /*GFA */
+double Omega0_dcdmdrwdm=1.0; /*GFA */
 int index_guess;
 
 /* Cheat to read only known parameters: */
@@ -3977,6 +3988,8 @@ case omega_dcdmdr:
     a_decay = 1.0;
  else
     a_decay = pow(1+(gamma*gamma-1.)/Omega_M,-1./3.);
+ /* GFA: This a_decay is obtained from the Friedmann equation for an universe just with Omega_M and Omega_Lambda=1-Omega_M, imposing H(a_decay)=Gamma_dcdm */
+ /* Then time at a_decay is approximately given by t(a_decay)=(1/Gamma_dcdm)*log(a_decay), so exp(-Gamma_dcdm*t(a_decay))=1/a_decay */
  xguess[index_guess] = pfzw->target_value[index_guess]/ba.h/ba.h/a_decay;
  dxdy[index_guess] = 1./a_decay/ba.h/ba.h;
  break;

@@ -109,7 +109,7 @@ struct background
   double Omega0_k; /**< \f$ \Omega_{0_k} \f$: curvature contribution */
 
   int N_ncdm;                            /**< Number of distinguishable ncdm species */
-  int N_ncdm_no_decay;                     /**< GFA: Number of distinguishable ncdm species that are not the wdm daughter particle*/
+//  int N_ncdm_no_decay;                     /**< GFA: Number of distinguishable ncdm species that are not the wdm daughter particle*/
   double * M_ncdm;                       /**< vector of masses of non-cold relic:
                                              dimensionless ratios m_ncdm/T_ncdm */
   double * Omega0_ncdm, Omega0_ncdm_tot; /**< Omega0_ncdm for each species and for the total Omega0_ncdm */
@@ -163,8 +163,8 @@ struct background
   double Omega0_r;  /**< total ultra-relativistic radiation today */
   double Omega0_de; /**< total dark energy density today, currently defined as 1 - Omega0_m - Omega0_r - Omega0_k */
   double a_ini_dcdm2; /**< GFA: initial scale factor for the two-body decay of dark matter   */
-  double H_at_a; /**< GFA: for storing the value of H at each time step, needed for wdm computation*/
-  double t_at_a; /**< GFA: for storing the value of t at each time step, needed for wdm computation*/
+//  double * H_at_a; /**< GFA: for storing the value of H at each time step, needed for wdm computation as an NCDM species*/
+//  double * t_at_a; /**< GFA: for storing the value of t at each time step, needed for wdm computation as an NCDM species */
   double a_eq;      /**< scale factor at radiation/matter equality */
   double H_eq;      /**< Hubble rate at radiation/matter equality [Mpc^-1] */
   double z_eq;      /**< redshift at radiation/matter equality */
@@ -200,8 +200,8 @@ struct background
   int index_bg_rho_ur;        /**< relativistic neutrinos/relics density */
   int index_bg_rho_dcdm;      /**< dcdm density */
   int index_bg_rho_dr;        /**< dr density */
-//  int index_bg_rho_wdm;      /**< GFA: wdm density (two-body decay)    */
-//  int index_bg_w_wdm;        /**< GFA: wdm equation of state (EoS) parameter   */
+  int index_bg_rho_wdm;      /**< GFA: wdm density (two-body decay)    */
+  int index_bg_w_wdm;        /**< GFA: wdm equation of state (EoS) parameter   */
 //  int index_bg_p_wdm_a;      /**< GFA: wdm pressure (two-body decay), calculated with EoS parameter */
 //  int index_bg_p_wdm_b;      /**< GFA: wdm pressure (two-body decay), calculated with general formula */
 
@@ -280,13 +280,13 @@ struct background
   int index_bi_a;       /**< {B} scale factor */
   int index_bi_rho_dcdm;/**< {B} dcdm density */
   int index_bi_rho_dr;  /**< {B} dr density */
-//  int index_bi_rho_wdm;  /**< GFA: {B} wdm density*/
+  int index_bi_rho_wdm;  /**< GFA: {B} wdm density*/
 //  int index_bi_p_wdm_b;      /**< GFA: {B} wdm pressure, calculated with general formula */
-//  double rho_ini_wdm;  /**< GFA: {B} initial value of  wdm density*/
-//  double integral_rho_wdm; /**< GFA: {B} initial value of integral needed to compute the wdm density */
-//  double integral_w_wdm; /**< GFA: {B} initial value of integral needed to compute the wdm EoS*/
-//  int index_bi_w_wdm; /**< GFA: {B} equation of state parameter for wdm   */
-//  double w_ini_wdm;  /**< GFA: {B} initial value of the  EoS parameter for wdm   */
+  double rho_ini_wdm;  /**< GFA: {B} initial value of  wdm density*/
+  double integral_rho_wdm; /**< GFA: {B} initial value of integral needed to compute the wdm density */
+  double integral_w_wdm; /**< GFA: {B} initial value of integral needed to compute the wdm EoS*/
+  int index_bi_w_wdm; /**< GFA: {B} equation of state parameter for wdm   */
+  double w_ini_wdm;  /**< GFA: {B} initial value of the  EoS parameter for wdm   */
   int index_bi_rho_fld; /**< {B} fluid density */
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
@@ -492,7 +492,6 @@ extern "C" {
 
 
   int background_ncdm_momenta(struct background *pba,
-                              struct background_parameters_for_distributions *pbadist,
                              double * qvec,
                              double * wvec,
                              int qsize,
@@ -501,10 +500,10 @@ extern "C" {
                              double factor,
                              double z,
                              double * n,
-		             double * rho,
+		                         double * rho,
                              double * p,
                              double * drho_dM,
-			     double * pseudo_p
+			                       double * pseudo_p
                              );
 
   int background_ncdm_M_from_Omega(
